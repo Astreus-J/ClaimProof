@@ -1,0 +1,59 @@
+# Attestcoin Protocol Integration Summary
+
+> Technical document required by the BUIDL CTC 2026 Fall submission — explains specifically how and where ClaimProof uses the Attestcoin Protocol. Written to be verifiable by a judge who opens the repository, following the transparency standard set by the competitor `index41`.
+
+## Why Attestcoin is core, not decorative
+
+Test applied (inherited from the competitive analysis, see [decision.md](decision.md)): **"remove Attestcoin — does the project lose its inputs or its ability to act?"**
+
+For ClaimProof, the answer is literally yes: without Attestcoin, `ClaimVault` would have no cryptographically trustworthy way of knowing a delivery failed on another chain. The AI would have to trust unverified text or an API to authorize a payment — exactly the attack vector (fake data, prompt injection, a malicious operator) the product exists to eliminate.
+
+## Where the protocol is used
+
+### 1. Read layer (readability) — the only mode used
+
+ClaimProof uses exclusively the **read** direction of Attestcoin (proof that an event occurred on Ethereum Sepolia, verified on Creditcoin). The **write** direction (outbound messages from Creditcoin to another chain) is **not used**, because the protocol's own documentation describes it as not production-ready ("undergoing 3rd party testing and audits").
+
+### 2. Prover HTTP client — off-chain side (worker, Go)
+
+There is no official Go SDK for Attestcoin. The only official SDK, `@gluwa/usc-sdk`, is TypeScript-only — and it is itself just a thin wrapper around a hosted REST API. ClaimProof's `internal/proofbuilder` package (Go) talks to that same API directly over HTTP, reimplementing only the two calls the worker actually needs:
+
+| Client method (`internal/proofbuilder`) | Equivalent SDK call | Use in ClaimProof |
+|---|---|---|
+| `WaitUntilHeightAttested(ctx, chainKey, blockNumber)` | `ProofBuilder.waitUntilHeightAttested()` | Polls the Prover API (`https://prover.cc3-testnet.creditcoin.network`) until the Sepolia block containing the `DeliveryFailed` event is attested, before attempting to generate the proof |
+| `GetProof(ctx, txHash)` | `ProofBuilder.getProof()` | Obtains the Merkle inclusion proof + continuity proof for the `DeliveryFailed` transaction |
+
+The exact request/response JSON schema is documented inline in `internal/proofbuilder` as it's discovered against the live testnet endpoint — the TypeScript SDK's source (`gluwa/attestcoin-protocol-examples`) is used as the reference for the expected shape, not as a dependency.
+
+### 3. Contract (`ClaimVault.sol`) — on-chain side (Creditcoin)
+
+| Interface / Function | Use in ClaimProof |
+|---|---|
+| `INativeQueryVerifier.verifyAndEmit(chainKey, blockHeight, txBytes, merkleRoot, siblings, lowerEndpointDigest, continuityRoots)` on the native `0x0FD2` precompile | Synchronous call, within the `submitClaim` transaction itself, that re-verifies inclusion and continuity of the `DeliveryFailed` transaction before any fund transfer |
+| `EvmV1Decoder` (decoding library) | Extracts `orderId`, `buyer`, and `timestamp` from the raw bytes of the attested transaction, plus the **status** field (`0x1` = success) — checked explicitly, since the precompile only proves inclusion, not success |
+| `processedQueries` (internal mapping, keyed by `(chainKey, blockHeight, transactionIndex)`) | Prevents the same proof from being resubmitted to generate multiple payouts (anti-replay protection) |
+
+## Full verification flow
+
+1. `DeliveryFailed` is emitted on `DeliveryTrackerMock` (Ethereum Sepolia).
+2. The worker waits for the corresponding block's attestation and obtains the proof via the `internal/proofbuilder` HTTP client.
+3. The worker calls `ClaimVault.submitClaim(...)`, passing the raw proof.
+4. `ClaimVault` calls `verifyAndEmit()` on the `0x0FD2` precompile — if verification fails (invalid proof, unattested block, broken continuity), the whole transaction reverts and no funds move.
+5. If verification succeeds, `ClaimVault` decodes the transaction via `EvmV1Decoder`, confirms the `0x1` status, checks `processedQueries`, and only then releases the payout.
+
+## Chains involved
+
+| Role | Chain | Note |
+|---|---|---|
+| Source (verified event) | Ethereum Sepolia | The only source chain the Attestcoin Protocol supports today, alongside Ethereum Mainnet — the "any chain" marketing language doesn't yet reflect the actual implementation |
+| Execution (verification + payout) | Creditcoin CC3 Testnet | Where the `0x0FD2` precompile runs natively |
+
+## Cost and latency (documented, not blindly estimated)
+
+The gas-cost formula published in the protocol's documentation (`attestcoin-protocol/attestcoin-readability/gas-costs.md`) shows that verification cost **grows with proof age** (more continuity hashes to walk). ClaimProof's worker is designed to submit the claim as soon as the attestation is available, minimizing this cost — an architectural decision made directly in response to this documented protocol characteristic, not a generic assumption.
+
+## Known protocol limitations that shaped this design
+
+- Writability is not used (not production-ready) — see above.
+- Only Ethereum/Sepolia as a source — `DeliveryTrackerMock` was deliberately designed for this chain.
+- Attestor set in `AuthorizedOnly` mode and a `MinBondRequirement` of 0 CTC on mainnet — protocol-level infrastructure risks, documented in [../SECURITY.md](../SECURITY.md) and [THREAT_MODEL.md](THREAT_MODEL.md), outside ClaimProof's control.
