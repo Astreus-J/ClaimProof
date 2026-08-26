@@ -1,0 +1,10 @@
+{
+  "sepolia": {
+    "chainId": 11155111,
+    "DeliveryTrackerMock": ""
+  },
+  "creditcoinTestnet": {
+    "chainId": 102031,
+    "ClaimVault": ""
+  }
+}

@@ -1,1 +1,12 @@
 CLAUDE.md
+
+# Environment files (never commit secrets/keys)
+.env
+.env.*
+!.env.example
+
+# Go build artifacts
+backend/bin/
+
+# OS / editor junk
+.DS_Store
