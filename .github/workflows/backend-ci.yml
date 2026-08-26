@@ -1,0 +1,49 @@
+name: Backend CI
+
+permissions: {}
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  check:
+    name: Go worker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+
+      - name: Check gofmt
+        run: |
+          diff <(gofmt -s -l .) <(printf "")
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          working-directory: backend
+          version: v2.13.1
+
+      - name: Run tests (race detector)
+        run: go test -race ./...

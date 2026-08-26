@@ -23,7 +23,37 @@ There is no official Go SDK for Attestcoin. The only official SDK, `@gluwa/usc-s
 | `WaitUntilHeightAttested(ctx, chainKey, blockNumber)` | `ProofBuilder.waitUntilHeightAttested()` | Polls the Prover API (`https://prover.cc3-testnet.creditcoin.network`) until the Sepolia block containing the `DeliveryFailed` event is attested, before attempting to generate the proof |
 | `GetProof(ctx, txHash)` | `ProofBuilder.getProof()` | Obtains the Merkle inclusion proof + continuity proof for the `DeliveryFailed` transaction |
 
-The exact request/response JSON schema is documented inline in `internal/proofbuilder` as it's discovered against the live testnet endpoint — the TypeScript SDK's source (`gluwa/attestcoin-protocol-examples`) is used as the reference for the expected shape, not as a dependency.
+The exact request/response JSON schema was confirmed by reading the official TypeScript SDK's source (`@gluwa/usc-sdk`, via `gluwa/attestcoin-protocol-examples`) — used as a reference only, never as a dependency, since `internal/proofbuilder` reimplements the same three REST calls directly in Go against `https://prover.cc3-testnet.creditcoin.network`:
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/v1/proof-by-tx/{chainKey}/{transactionHash}` | `GET` | Returns the inclusion + continuity proof for one transaction |
+| `/api/v1/proof-batch-by-tx/{chainKey}` | `POST`, body: JSON array of transaction hashes | Same, for up to 10 transactions in one call |
+| `/api/v1/attested-height/{chainKey}` | `GET` | Returns the latest block height the Prover has attested and cached for that chain, as `{ "attestedHeight": number }` |
+
+`GET /api/v1/proof-by-tx/{chainKey}/{transactionHash}` response shape (this is what `internal/proofbuilder.Proof` models):
+
+```jsonc
+{
+  "chainKey": 1,
+  "headerNumber": 123456,
+  "txIndex": 0,
+  "txHash": "0x...",
+  "txBytes": "0x...",           // raw encoded transaction, decoded on-chain by EvmV1Decoder
+  "continuityProof": {
+    "lowerEndpointDigest": "0x...",
+    "roots": ["0x...", "0x..."]
+  },
+  "merkleProof": {
+    "root": "0x...",
+    "siblings": [{ "hash": "0x...", "isLeft": true }]
+  },
+  "cached": false,
+  "generatedAt": "2026-08-26T00:00:00.000Z"
+}
+```
+
+`waitUntilHeightAttested` is not a separate endpoint — it's a client-side poll loop (15s interval, ~15min timeout in the SDK's defaults) that repeatedly calls `attested-height` until `attestedHeight >= targetHeight`, per the SDK's own doc comment: attestation of a Sepolia-age block typically takes ~8–10 minutes.
 
 ### 3. Contract (`ClaimVault.sol`) — on-chain side (Creditcoin)
 

@@ -14,16 +14,16 @@ References: [product.md](product.md) (vision) · [architecture.md](architecture.
 
 ### Tasks
 
-- [ ] Create a public GitHub repository with the folder structure defined in the README
-- [ ] Configure Foundry (`forge init`, `foundry.toml` pointing to Creditcoin CC3 Testnet and Ethereum Sepolia via RPC)
-- [ ] Get testnet CTC from the faucet and configure a deploy wallet (separate from any personal wallet)
-- [ ] Run the official `@gluwa/usc-sdk` "Hello Bridge" tutorial (`gluwa/attestcoin-protocol-examples`) once, in a scratch directory outside the repo, purely as a reference to confirm the Prover API's request/response shape and testnet setup — it is **not** a project dependency, since the backend is Go
-- [ ] Initialize the Go module (`go mod init github.com/<org>/claimproof/backend` or equivalent), create `cmd/worker/main.go` and the `internal/{listener,proofbuilder,claimsagent,chain}/` package skeletons, add `go-ethereum` as a dependency
-- [ ] Write the `DeliveryTrackerMock.sol` skeleton (Sepolia): shipment struct, `createShipment` function, `DeliveryFailed` event
-- [ ] Write the `ClaimVault.sol` skeleton (Creditcoin): `registerOrder`, pool structure, basic access guard
-- [ ] Deploy both skeletons to testnet via `contracts/script/Deploy.s.sol`
-- [ ] Create `scripts/deployments.json` with the deployed addresses
-- [ ] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain`
+- [x] Create a public GitHub repository with the folder structure defined in the README
+- [x] Configure Foundry (`forge init`, `foundry.toml` pointing to Creditcoin CC3 Testnet and Ethereum Sepolia via RPC)
+- [x] Get testnet CTC from the faucet and configure a deploy wallet (separate from any personal wallet)
+- [x] Run the official `@gluwa/usc-sdk` "Hello Bridge" tutorial (`gluwa/attestcoin-protocol-examples`) once, in a scratch directory outside the repo, purely as a reference to confirm the Prover API's request/response shape and testnet setup — it is **not** a project dependency, since the backend is Go. Ran end-to-end against live testnet (burn on Sepolia → attested → proof generated → minted on Creditcoin), confirming the full pipeline works; the confirmed Prover API schema is recorded in [ATTESTCOIN_INTEGRATION.md](ATTESTCOIN_INTEGRATION.md).
+- [x] Initialize the Go module (`go mod init github.com/<org>/claimproof/backend` or equivalent), create `cmd/worker/main.go` and the `internal/{listener,proofbuilder,claimsagent,chain}/` package skeletons, add `go-ethereum` as a dependency
+- [x] Write the `DeliveryTrackerMock.sol` skeleton (Sepolia): shipment struct, `createShipment` function, `DeliveryFailed` event
+- [x] Write the `ClaimVault.sol` skeleton (Creditcoin): `registerOrder`, pool structure, basic access guard
+- [x] Deploy both skeletons to testnet via `contracts/script/` (`DeployDeliveryTrackerMock.s.sol` on Sepolia via `forge script`; `DeployClaimVault.s.sol` on Creditcoin CC3 via `forge create`, since Creditcoin's RPC omits `mixHash` and breaks `forge script`'s local simulation — documented in the script file)
+- [x] Create `scripts/deployments.json` with the deployed addresses
+- [ ] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain` — blocked on this machine: `abigen` fails to build locally due to a non-standard Go toolchain (see feature branch notes); deferred until a standard Go environment is available or until Sprint 2/3 actually needs the bindings
 
 ### Exit criterion
 
