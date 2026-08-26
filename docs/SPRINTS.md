@@ -39,17 +39,19 @@ Both skeleton contracts are deployed on testnet, the official SDK tutorial runs 
 
 ### Tasks
 
-- [ ] Implement the call to `INativeQueryVerifier.verifyAndEmit()` on the `0x0FD2` precompile inside `ClaimVault.submitClaim(...)`
-- [ ] Integrate `EvmV1Decoder` to extract `orderId`, `buyer`, `timestamp`, and the status field from the decoded transaction
-- [ ] Implement an explicit check of the `0x1` status (the precompile only proves inclusion, not success — a documented protocol gotcha)
-- [ ] Implement the `processedQueries` mapping for anti-replay protection
-- [ ] Write `ClaimVault.t.sol`: successful verification, invalid proof rejected, nonexistent orderId rejected
-- [ ] Write `ReplayProtection.t.sol`: resubmitting the same proof is rejected
-- [ ] Manually test end-to-end on testnet: emit a real `DeliveryFailed` on Sepolia → generate the proof via `ProofBuilder` → submit it to `ClaimVault` → confirm the payout
+- [x] Implement the call to `INativeQueryVerifier.verifyAndEmit()` on the `0x0FD2` precompile inside `ClaimVault.submitClaim(...)`
+- [x] Integrate `EvmV1Decoder` to extract `orderId`, `buyer`, `timestamp`, and the status field from the decoded transaction
+- [x] Implement an explicit check of the `0x1` status (the precompile only proves inclusion, not success — a documented protocol gotcha)
+- [x] Implement the `processedQueries` mapping for anti-replay protection
+- [x] Write `ClaimVault.t.sol`: successful verification, invalid proof rejected, nonexistent orderId rejected
+- [x] Write `ReplayProtection.t.sol`: resubmitting the same proof is rejected
+- [x] Manually test end-to-end on testnet: emit a real `DeliveryFailed` on Sepolia → generate the proof via `ProofBuilder` → submit it to `ClaimVault` → confirm the payout
 
 ### Exit criterion
 
 A real event emitted on Sepolia is verified and results in a correct payout on `ClaimVault` on Creditcoin, with no mocked part in the verification. Negative tests (T1–T3 from [THREAT_MODEL.md](THREAT_MODEL.md)) pass.
+
+**Verified 2026-08-26:** order 42 registered on `ClaimVault` (`0xE05C7771921368e3d433accCa93e9E185acb12D3`), a real `DeliveryFailed` emitted on `DeliveryTrackerMock` (Sepolia tx `0x7033d1940b59e974c4c73900cf4503642069c2d4157ec1b681215d2a2a817908`), proof fetched from the live Prover API after attestation, submitted via `submitClaim` — payout landed for the exact registered `protectionAmount`, `orders[42].claimed == true`, pool balance decreased accordingly. All 32 Foundry tests pass, including T1/T2/T3 and two additional threats found during this sprint's `entry-point-analyzer`/`guidelines-advisor` pass (T8: `registerOrder` was missing its intended `onlyWorker` gate; T9: a `DeliveryFailed` log's emitter address wasn't checked against the trusted `DeliveryTrackerMock`) — both fixed and documented in [THREAT_MODEL.md](THREAT_MODEL.md).
 
 ---
 

@@ -33,10 +33,16 @@ var (
 	_ = context.Background
 )
 
+// INativeQueryVerifierMerkleProofEntry is an auto generated low-level Go binding around an user-defined struct.
+type INativeQueryVerifierMerkleProofEntry struct {
+	Hash   [32]byte
+	IsLeft bool
+}
+
 // ClaimVaultMetaData contains all meta data concerning the ClaimVault contract.
 var ClaimVaultMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"initialWorker\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"initialPayoutCap\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"fundPool\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"orders\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"buyer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"claimed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"payoutCap\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"poolBalance\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerOrder\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"buyer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPayoutCap\",\"inputs\":[{\"name\":\"newCap\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setWorker\",\"inputs\":[{\"name\":\"newWorker\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"worker\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"OrderRegistered\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"buyer\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PayoutCapUpdated\",\"inputs\":[{\"name\":\"previousCap\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newCap\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PoolFunded\",\"inputs\":[{\"name\":\"funder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkerUpdated\",\"inputs\":[{\"name\":\"previousWorker\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newWorker\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"NotOwner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OrderAlreadyExists\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"ZeroAddress\",\"inputs\":[]}]",
-	Bin: "0x60a0604052348015600e575f80fd5b5060405161061f38038061061f833981016040819052602b91607c565b6001600160a01b03821660515760405163d92e233d60e01b815260040160405180910390fd5b336080525f80546001600160a01b0319166001600160a01b03939093169290921790915560015560b1565b5f8060408385031215608c575f80fd5b82516001600160a01b038116811460a1575f80fd5b6020939093015192949293505050565b6080516105486100d75f395f818161012001528181610345015261040e01526105485ff3fe608060405260043610610084575f3560e01c80638da5cb5b116100575780638da5cb5b1461010f57806396365d4414610142578063a85c38ef14610154578063c26f6d44146101c3578063e3643600146101e2575f80fd5b8063282c89ce146100885780634d547ada146100b057806357dc1dbf146100e657806370f37d2714610107575b5f80fd5b348015610093575f80fd5b5061009d60015481565b6040519081526020015b60405180910390f35b3480156100bb575f80fd5b505f546100ce906001600160a01b031681565b6040516001600160a01b0390911681526020016100a7565b3480156100f1575f80fd5b506101056101003660046104a8565b610201565b005b610105610303565b34801561011a575f80fd5b506100ce7f000000000000000000000000000000000000000000000000000000000000000081565b34801561014d575f80fd5b504761009d565b34801561015f575f80fd5b5061019c61016e3660046104db565b600260208190525f91825260409091208054600182015491909201546001600160a01b039092169160ff1683565b604080516001600160a01b03909416845260208401929092521515908201526060016100a7565b3480156101ce575f80fd5b506101056101dd3660046104f2565b61033a565b3480156101ed575f80fd5b506101056101fc3660046104db565b610403565b5f838152600260205260409020546001600160a01b03161561023d576040516314d0bb6760e31b81526004810184905260240160405180910390fd5b6001600160a01b0382166102645760405163d92e233d60e01b815260040160405180910390fd5b604080516060810182526001600160a01b0384811680835260208084018681525f8587018181528a8252600280855291889020965187546001600160a01b031916961695909517865590516001860155925193909201805460ff1916931515939093179092559151838152909185917f2d4441e560168d0759d4f3ef8e50e50f95b5d4ead1742716247b50cc31b4bbd6910160405180910390a3505050565b60405134815233907f32173d8e51cec3a6fe484b7a1c3febe760cdf96e03d4cca36a43563a4333e8389060200160405180910390a2565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614610383576040516330cd747160e01b815260040160405180910390fd5b6001600160a01b0381166103aa5760405163d92e233d60e01b815260040160405180910390fd5b5f80546040516001600160a01b03808516939216917f98b88aa89cb5f247008e613dc8529d633ab05a62f7120c07ebcfcdd852fc2a8d91a35f80546001600160a01b0319166001600160a01b0392909216919091179055565b336001600160a01b037f0000000000000000000000000000000000000000000000000000000000000000161461044c576040516330cd747160e01b815260040160405180910390fd5b60015460408051918252602082018390527f16b91e3df5f11d1a549caeac074e2d268332ae28ab46cbefa4909847be962708910160405180910390a1600155565b80356001600160a01b03811681146104a3575f80fd5b919050565b5f805f606084860312156104ba575f80fd5b833592506104ca6020850161048d565b929592945050506040919091013590565b5f602082840312156104eb575f80fd5b5035919050565b5f60208284031215610502575f80fd5b61050b8261048d565b939250505056fea2646970667358221220c9809f085a1455b4a45348c751525434a82de9292b279814655f1dcbb6ca002964736f6c634300081a0033",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"sourceContract_\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"initialWorker\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"initialPayoutCap\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"DELIVERY_FAILED_EVENT_SIGNATURE\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"VERIFIER\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractINativeQueryVerifier\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"fundPool\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"orders\",\"inputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"buyer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"claimed\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"payoutCap\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"poolBalance\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"processedQueries\",\"inputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"registerOrder\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"buyer\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setPayoutCap\",\"inputs\":[{\"name\":\"newCap\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setWorker\",\"inputs\":[{\"name\":\"newWorker\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"sourceContract\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"submitClaim\",\"inputs\":[{\"name\":\"chainKey\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"blockHeight\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"encodedTransaction\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"merkleRoot\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"siblings\",\"type\":\"tuple[]\",\"internalType\":\"structINativeQueryVerifier.MerkleProofEntry[]\",\"components\":[{\"name\":\"hash\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"isLeft\",\"type\":\"bool\",\"internalType\":\"bool\"}]},{\"name\":\"lowerEndpointDigest\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"continuityRoots\",\"type\":\"bytes32[]\",\"internalType\":\"bytes32[]\"}],\"outputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"payoutAmount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"worker\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"ClaimPaid\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"buyer\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"queryId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OrderRegistered\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"buyer\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"protectionAmount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PayoutCapUpdated\",\"inputs\":[{\"name\":\"previousCap\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"newCap\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"PoolFunded\",\"inputs\":[{\"name\":\"funder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"WorkerUpdated\",\"inputs\":[{\"name\":\"previousWorker\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newWorker\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"DeliveryFailedEventNotFound\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidProof\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotOwner\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"NotWorker\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"OrderAlreadyClaimed\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"OrderAlreadyExists\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"OrderBuyerMismatch\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"OrderNotFound\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}]},{\"type\":\"error\",\"name\":\"PayoutTransferFailed\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"QueryAlreadyProcessed\",\"inputs\":[{\"name\":\"queryId\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"SourceTransactionNotSuccessful\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"ZeroAddress\",\"inputs\":[]}]",
+	Bin: "0x60e0346100f057601f61108538819003918201601f19168301916001600160401b038311848410176100f4578084926060946040528339810103126100f05761004781610108565b604061005560208401610108565b920151916001600160a01b038216156100e1576001600160a01b03169081156100e1573360805260a0525f80546001600160a01b031916919091179055600155610fd260c052604051610f68908161011d8239608051818181610887015281816109230152610a67015260a051818181610a080152610e26015260c0518181816102150152610c9f0152f35b63d92e233d60e01b5f5260045ffd5b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b51906001600160a01b03821682036100f05756fe6080806040526004361015610012575f80fd5b5f3560e01c90816308c84e7014610c8d57508063282c89ce14610c7057806333cc99ab14610c415780634d547ada14610c1a57806357dc1dbf14610b0957806370f37d2714610ad057806371441c7b14610a965780638da5cb5b14610a5257806396365d4414610a37578063a444ae41146109f3578063a85c38ef146109a5578063c26f6d44146108fb578063e3643600146108715763f9ea1943146100b6575f80fd5b3461065b5760e036600319011261065b576004356001600160401b03811680820361065b57602435906001600160401b0382169081830361065b57604435926001600160401b03841161065b573660238501121561065b578360040135926001600160401b03841161065b576024850194602485369201011161065b57608435956001600160401b03871161065b573660238801121561065b578660040135916001600160401b03831161065b5760248360061b8901019036821161065b5760c435926001600160401b03841161065b573660238501121561065b578360040135946001600160401b03861161065b5760248660051b8601019a368c1161065b57604051946101c486610ce9565b60643586526101d283610d25565b926101e06040519485610d04565b83526024602084019201915b8183106108325750505060208481019190915260405163113e17c760e21b8152600481018290527f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169791818061024e6024820189610d5c565b03818b5afa908115610767575f916107f8575b506040516001600160c01b031960c094851b81166020830190815293851b811660288301529190931b16603083015260188252906102a0603882610d04565b51902098895f52600360205260ff60405f2054166107e557604096949392919651926102cb84610ce9565b60a43584526102d985610d25565b946102e76040519687610d04565b8552602401602085015b8282106107d557505050606061034a6020928385019586526040519889976302f4d16760e01b89526004890152602488015260a0604488015261033860a488018b8d610d3c565b87810360031901606489015290610d5c565b93600319868603016084870152604085019351855251936040838201528451809452019201905f5b8181106107bc5750505091815f8160209503925af1908115610767575f91610781575b5015610772576103db915f91848352600360205260408320600160ff1982541617905560405193849283926306eae3bf60e11b8452602060048501526024840191610d3c565b038173e671304e9d91b7df3a5d9019ea58e6fc33eb4bb35af4908115610767575f91610556575b50600160ff8251160361054757604061041c910151610e24565b5f8281526002602052604090208054929390926001600160a01b03168015610534576001600160a01b03831690819003610521576002840180549460ff861661050e57945f948594859485946001809b9a01548b5490818111881461050457509a8b955b60ff1916179055887f1452c7c49daaf3c16d43eec536038b6301740b5b1d895e7ea5f0f03de02281776020604051878152a45af13d156104ff573d6104c481610dc3565b906104d26040519283610d04565b81525f60203d92013e5b156104f05760409182519182526020820152f35b631486dc3f60e21b5f5260045ffd5b6104dc565b90509a8b95610480565b8663616d044f60e01b5f5260045260245ffd5b84630aca528160e31b5f5260045260245ffd5b846313a42eb760e21b5f5260045260245ffd5b633c6dedfb60e21b5f5260045ffd5b90503d805f833e6105678183610d04565b81019060208183031261065b578051906001600160401b03821161065b570160808183031261065b5760405191608083018381106001600160401b0382111761075357604052815160ff8116810361065b5783526105c760208301610daf565b602084015260408201516001600160401b03811161065b57820181601f8201121561065b578051906105f882610d25565b916106066040519384610d04565b80835260208084019160051b8301019184831161065b5760208101915b83831061065f5750505050604084015260608201516001600160401b03811161065b576106509201610dde565b60608201525f610402565b5f80fd5b82516001600160401b03811161065b578201906060828803601f19011261065b576040519061068d82610cce565b60208301516001600160a01b038116810361065b57825260408301516001600160401b03811161065b5760209084010188601f8201121561065b578051906106d482610d25565b916106e26040519384610d04565b80835260208084019160051b830101918b831161065b57602001905b8282106107435750505060208301526060830151916001600160401b03831161065b5761073389602080969581960101610dde565b6040820152815201920191610623565b81518152602091820191016106fe565b634e487b7160e01b5f52604160045260245ffd5b6040513d5f823e3d90fd5b6309bde33960e01b5f5260045ffd5b90506020813d6020116107b4575b8161079c60209383610d04565b8101031261065b5751801515810361065b575f610395565b3d915061078f565b8251845286945060209384019390920191600101610372565b81358152602091820191016102f1565b896362e48a6560e01b5f5260045260245ffd5b90506020813d60201161082a575b8161081360209383610d04565b8101031261065b5761082490610daf565b5f610261565b3d9150610806565b60408336031261065b576040519061084982610ce9565b83358252602084013590811515820361065b57826020928360409501528152019201916101ec565b3461065b57602036600319011261065b576004357f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031633036108ec577f16b91e3df5f11d1a549caeac074e2d268332ae28ab46cbefa4909847be96270860406001548151908152836020820152a1600155005b6330cd747160e01b5f5260045ffd5b3461065b57602036600319011261065b576004356001600160a01b0381169081900361065b577f00000000000000000000000000000000000000000000000000000000000000006001600160a01b031633036108ec578015610996575f548160018060a01b0382167f98b88aa89cb5f247008e613dc8529d633ab05a62f7120c07ebcfcdd852fc2a8d5f80a36001600160a01b031916175f55005b63d92e233d60e01b5f5260045ffd5b3461065b57602036600319011261065b576004355f526002602052606060405f2060018060a01b038154169060ff600260018301549201541690604051928352602083015215156040820152f35b3461065b575f36600319011261065b576040517f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03168152602090f35b3461065b575f36600319011261065b57602047604051908152f35b3461065b575f36600319011261065b576040517f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03168152602090f35b3461065b575f36600319011261065b5760206040517fe4ce927580aec56981151f3af94fdeab8c1fb94f1d388862dbaf4c6fcbdec4dc8152f35b5f36600319011261065b576040513481527f32173d8e51cec3a6fe484b7a1c3febe760cdf96e03d4cca36a43563a4333e83860203392a2005b3461065b57606036600319011261065b576024356001600160a01b038116906004359082900361065b575f54604435906001600160a01b03163303610c0b575f828152600260205260409020546001600160a01b0316610bf85782156109965760207f2d4441e560168d0759d4f3ef8e50e50f95b5d4ead1742716247b50cc31b4bbd691604051610b9981610cce565b85815260028382019183835260408101925f8452875f5282865260405f209160018060a01b039051166bffffffffffffffffffffffff60a01b835416178255516001820155019051151560ff80198354169116179055604051908152a3005b506314d0bb6760e31b5f5260045260245ffd5b63fb55adaf60e01b5f5260045ffd5b3461065b575f36600319011261065b575f546040516001600160a01b039091168152602090f35b3461065b57602036600319011261065b576004355f526003602052602060ff60405f2054166040519015158152f35b3461065b575f36600319011261065b576020600154604051908152f35b3461065b575f36600319011261065b577f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03168152602090f35b606081019081106001600160401b0382111761075357604052565b604081019081106001600160401b0382111761075357604052565b90601f801991011681019081106001600160401b0382111761075357604052565b6001600160401b0381116107535760051b60200190565b908060209392818452848401375f828201840152601f01601f1916010190565b60206060816040850193805186520151936040838201528451809452019201905f5b818110610d8b5750505090565b82518051855260209081015115158186015260409094019390920191600101610d7e565b51906001600160401b038216820361065b57565b6001600160401b03811161075357601f01601f191660200190565b81601f8201121561065b57805190610df582610dc3565b92610e036040519485610d04565b8284526020838301011161065b57815f9260208093018386015e8301015290565b7f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03165f5b8251811015610f23578251811015610ec857600581901b83016020015180516001600160a01b0316831480610f14575b80610edc575b610e935750600101610e50565b9150506020915001908151805160011015610ec857604001519151805160021015610ec857606001516001600160a01b031690565b634e487b7160e01b5f52603260045260245ffd5b506020810151805115610ec857602001517fe4ce927580aec56981151f3af94fdeab8c1fb94f1d388862dbaf4c6fcbdec4dc14610e86565b50600360208201515114610e80565b63f9a4632960e01b5f5260045ffdfea2646970667358221220d96a2a5eb1184cbca5e9d9a96702a451221be6e9256a2d621f253bf64726884164736f6c634300081a0033",
 }
 
 // ClaimVaultABI is the input ABI used to generate the binding from.
@@ -48,7 +54,7 @@ var ClaimVaultABI = ClaimVaultMetaData.ABI
 var ClaimVaultBin = ClaimVaultMetaData.Bin
 
 // DeployClaimVault deploys a new Ethereum contract, binding an instance of ClaimVault to it.
-func DeployClaimVault(auth *bind.TransactOpts, backend bind.ContractBackend, initialWorker common.Address, initialPayoutCap *big.Int) (common.Address, *types.Transaction, *ClaimVault, error) {
+func DeployClaimVault(auth *bind.TransactOpts, backend bind.ContractBackend, sourceContract_ common.Address, initialWorker common.Address, initialPayoutCap *big.Int) (common.Address, *types.Transaction, *ClaimVault, error) {
 	parsed, err := ClaimVaultMetaData.GetAbi()
 	if err != nil {
 		return common.Address{}, nil, nil, err
@@ -57,7 +63,7 @@ func DeployClaimVault(auth *bind.TransactOpts, backend bind.ContractBackend, ini
 		return common.Address{}, nil, nil, errors.New("GetABI returned nil")
 	}
 
-	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(ClaimVaultBin), backend, initialWorker, initialPayoutCap)
+	address, tx, contract, err := bind.DeployContract(auth, *parsed, common.FromHex(ClaimVaultBin), backend, sourceContract_, initialWorker, initialPayoutCap)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -206,6 +212,68 @@ func (_ClaimVault *ClaimVaultTransactorRaw) Transact(opts *bind.TransactOpts, me
 	return _ClaimVault.Contract.contract.Transact(opts, method, params...)
 }
 
+// DELIVERYFAILEDEVENTSIGNATURE is a free data retrieval call binding the contract method 0x71441c7b.
+//
+// Solidity: function DELIVERY_FAILED_EVENT_SIGNATURE() view returns(bytes32)
+func (_ClaimVault *ClaimVaultCaller) DELIVERYFAILEDEVENTSIGNATURE(opts *bind.CallOpts) ([32]byte, error) {
+	var out []interface{}
+	err := _ClaimVault.contract.Call(opts, &out, "DELIVERY_FAILED_EVENT_SIGNATURE")
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// DELIVERYFAILEDEVENTSIGNATURE is a free data retrieval call binding the contract method 0x71441c7b.
+//
+// Solidity: function DELIVERY_FAILED_EVENT_SIGNATURE() view returns(bytes32)
+func (_ClaimVault *ClaimVaultSession) DELIVERYFAILEDEVENTSIGNATURE() ([32]byte, error) {
+	return _ClaimVault.Contract.DELIVERYFAILEDEVENTSIGNATURE(&_ClaimVault.CallOpts)
+}
+
+// DELIVERYFAILEDEVENTSIGNATURE is a free data retrieval call binding the contract method 0x71441c7b.
+//
+// Solidity: function DELIVERY_FAILED_EVENT_SIGNATURE() view returns(bytes32)
+func (_ClaimVault *ClaimVaultCallerSession) DELIVERYFAILEDEVENTSIGNATURE() ([32]byte, error) {
+	return _ClaimVault.Contract.DELIVERYFAILEDEVENTSIGNATURE(&_ClaimVault.CallOpts)
+}
+
+// VERIFIER is a free data retrieval call binding the contract method 0x08c84e70.
+//
+// Solidity: function VERIFIER() view returns(address)
+func (_ClaimVault *ClaimVaultCaller) VERIFIER(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ClaimVault.contract.Call(opts, &out, "VERIFIER")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// VERIFIER is a free data retrieval call binding the contract method 0x08c84e70.
+//
+// Solidity: function VERIFIER() view returns(address)
+func (_ClaimVault *ClaimVaultSession) VERIFIER() (common.Address, error) {
+	return _ClaimVault.Contract.VERIFIER(&_ClaimVault.CallOpts)
+}
+
+// VERIFIER is a free data retrieval call binding the contract method 0x08c84e70.
+//
+// Solidity: function VERIFIER() view returns(address)
+func (_ClaimVault *ClaimVaultCallerSession) VERIFIER() (common.Address, error) {
+	return _ClaimVault.Contract.VERIFIER(&_ClaimVault.CallOpts)
+}
+
 // Orders is a free data retrieval call binding the contract method 0xa85c38ef.
 //
 // Solidity: function orders(uint256 ) view returns(address buyer, uint256 protectionAmount, bool claimed)
@@ -349,6 +417,68 @@ func (_ClaimVault *ClaimVaultCallerSession) PoolBalance() (*big.Int, error) {
 	return _ClaimVault.Contract.PoolBalance(&_ClaimVault.CallOpts)
 }
 
+// ProcessedQueries is a free data retrieval call binding the contract method 0x33cc99ab.
+//
+// Solidity: function processedQueries(bytes32 ) view returns(bool)
+func (_ClaimVault *ClaimVaultCaller) ProcessedQueries(opts *bind.CallOpts, arg0 [32]byte) (bool, error) {
+	var out []interface{}
+	err := _ClaimVault.contract.Call(opts, &out, "processedQueries", arg0)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// ProcessedQueries is a free data retrieval call binding the contract method 0x33cc99ab.
+//
+// Solidity: function processedQueries(bytes32 ) view returns(bool)
+func (_ClaimVault *ClaimVaultSession) ProcessedQueries(arg0 [32]byte) (bool, error) {
+	return _ClaimVault.Contract.ProcessedQueries(&_ClaimVault.CallOpts, arg0)
+}
+
+// ProcessedQueries is a free data retrieval call binding the contract method 0x33cc99ab.
+//
+// Solidity: function processedQueries(bytes32 ) view returns(bool)
+func (_ClaimVault *ClaimVaultCallerSession) ProcessedQueries(arg0 [32]byte) (bool, error) {
+	return _ClaimVault.Contract.ProcessedQueries(&_ClaimVault.CallOpts, arg0)
+}
+
+// SourceContract is a free data retrieval call binding the contract method 0xa444ae41.
+//
+// Solidity: function sourceContract() view returns(address)
+func (_ClaimVault *ClaimVaultCaller) SourceContract(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _ClaimVault.contract.Call(opts, &out, "sourceContract")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// SourceContract is a free data retrieval call binding the contract method 0xa444ae41.
+//
+// Solidity: function sourceContract() view returns(address)
+func (_ClaimVault *ClaimVaultSession) SourceContract() (common.Address, error) {
+	return _ClaimVault.Contract.SourceContract(&_ClaimVault.CallOpts)
+}
+
+// SourceContract is a free data retrieval call binding the contract method 0xa444ae41.
+//
+// Solidity: function sourceContract() view returns(address)
+func (_ClaimVault *ClaimVaultCallerSession) SourceContract() (common.Address, error) {
+	return _ClaimVault.Contract.SourceContract(&_ClaimVault.CallOpts)
+}
+
 // Worker is a free data retrieval call binding the contract method 0x4d547ada.
 //
 // Solidity: function worker() view returns(address)
@@ -462,6 +592,192 @@ func (_ClaimVault *ClaimVaultSession) SetWorker(newWorker common.Address) (*type
 // Solidity: function setWorker(address newWorker) returns()
 func (_ClaimVault *ClaimVaultTransactorSession) SetWorker(newWorker common.Address) (*types.Transaction, error) {
 	return _ClaimVault.Contract.SetWorker(&_ClaimVault.TransactOpts, newWorker)
+}
+
+// SubmitClaim is a paid mutator transaction binding the contract method 0xf9ea1943.
+//
+// Solidity: function submitClaim(uint64 chainKey, uint64 blockHeight, bytes encodedTransaction, bytes32 merkleRoot, (bytes32,bool)[] siblings, bytes32 lowerEndpointDigest, bytes32[] continuityRoots) returns(uint256 orderId, uint256 payoutAmount)
+func (_ClaimVault *ClaimVaultTransactor) SubmitClaim(opts *bind.TransactOpts, chainKey uint64, blockHeight uint64, encodedTransaction []byte, merkleRoot [32]byte, siblings []INativeQueryVerifierMerkleProofEntry, lowerEndpointDigest [32]byte, continuityRoots [][32]byte) (*types.Transaction, error) {
+	return _ClaimVault.contract.Transact(opts, "submitClaim", chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots)
+}
+
+// SubmitClaim is a paid mutator transaction binding the contract method 0xf9ea1943.
+//
+// Solidity: function submitClaim(uint64 chainKey, uint64 blockHeight, bytes encodedTransaction, bytes32 merkleRoot, (bytes32,bool)[] siblings, bytes32 lowerEndpointDigest, bytes32[] continuityRoots) returns(uint256 orderId, uint256 payoutAmount)
+func (_ClaimVault *ClaimVaultSession) SubmitClaim(chainKey uint64, blockHeight uint64, encodedTransaction []byte, merkleRoot [32]byte, siblings []INativeQueryVerifierMerkleProofEntry, lowerEndpointDigest [32]byte, continuityRoots [][32]byte) (*types.Transaction, error) {
+	return _ClaimVault.Contract.SubmitClaim(&_ClaimVault.TransactOpts, chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots)
+}
+
+// SubmitClaim is a paid mutator transaction binding the contract method 0xf9ea1943.
+//
+// Solidity: function submitClaim(uint64 chainKey, uint64 blockHeight, bytes encodedTransaction, bytes32 merkleRoot, (bytes32,bool)[] siblings, bytes32 lowerEndpointDigest, bytes32[] continuityRoots) returns(uint256 orderId, uint256 payoutAmount)
+func (_ClaimVault *ClaimVaultTransactorSession) SubmitClaim(chainKey uint64, blockHeight uint64, encodedTransaction []byte, merkleRoot [32]byte, siblings []INativeQueryVerifierMerkleProofEntry, lowerEndpointDigest [32]byte, continuityRoots [][32]byte) (*types.Transaction, error) {
+	return _ClaimVault.Contract.SubmitClaim(&_ClaimVault.TransactOpts, chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots)
+}
+
+// ClaimVaultClaimPaidIterator is returned from FilterClaimPaid and is used to iterate over the raw logs and unpacked data for ClaimPaid events raised by the ClaimVault contract.
+type ClaimVaultClaimPaidIterator struct {
+	Event *ClaimVaultClaimPaid // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *ClaimVaultClaimPaidIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(ClaimVaultClaimPaid)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(ClaimVaultClaimPaid)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *ClaimVaultClaimPaidIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *ClaimVaultClaimPaidIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// ClaimVaultClaimPaid represents a ClaimPaid event raised by the ClaimVault contract.
+type ClaimVaultClaimPaid struct {
+	OrderId *big.Int
+	Buyer   common.Address
+	Amount  *big.Int
+	QueryId [32]byte
+	Raw     types.Log // Blockchain specific contextual infos
+}
+
+// FilterClaimPaid is a free log retrieval operation binding the contract event 0x1452c7c49daaf3c16d43eec536038b6301740b5b1d895e7ea5f0f03de0228177.
+//
+// Solidity: event ClaimPaid(uint256 indexed orderId, address indexed buyer, uint256 amount, bytes32 indexed queryId)
+func (_ClaimVault *ClaimVaultFilterer) FilterClaimPaid(opts *bind.FilterOpts, orderId []*big.Int, buyer []common.Address, queryId [][32]byte) (*ClaimVaultClaimPaidIterator, error) {
+
+	var orderIdRule []interface{}
+	for _, orderIdItem := range orderId {
+		orderIdRule = append(orderIdRule, orderIdItem)
+	}
+	var buyerRule []interface{}
+	for _, buyerItem := range buyer {
+		buyerRule = append(buyerRule, buyerItem)
+	}
+
+	var queryIdRule []interface{}
+	for _, queryIdItem := range queryId {
+		queryIdRule = append(queryIdRule, queryIdItem)
+	}
+
+	logs, sub, err := _ClaimVault.contract.FilterLogs(opts, "ClaimPaid", orderIdRule, buyerRule, queryIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return &ClaimVaultClaimPaidIterator{contract: _ClaimVault.contract, event: "ClaimPaid", logs: logs, sub: sub}, nil
+}
+
+// WatchClaimPaid is a free log subscription operation binding the contract event 0x1452c7c49daaf3c16d43eec536038b6301740b5b1d895e7ea5f0f03de0228177.
+//
+// Solidity: event ClaimPaid(uint256 indexed orderId, address indexed buyer, uint256 amount, bytes32 indexed queryId)
+func (_ClaimVault *ClaimVaultFilterer) WatchClaimPaid(opts *bind.WatchOpts, sink chan<- *ClaimVaultClaimPaid, orderId []*big.Int, buyer []common.Address, queryId [][32]byte) (event.Subscription, error) {
+
+	var orderIdRule []interface{}
+	for _, orderIdItem := range orderId {
+		orderIdRule = append(orderIdRule, orderIdItem)
+	}
+	var buyerRule []interface{}
+	for _, buyerItem := range buyer {
+		buyerRule = append(buyerRule, buyerItem)
+	}
+
+	var queryIdRule []interface{}
+	for _, queryIdItem := range queryId {
+		queryIdRule = append(queryIdRule, queryIdItem)
+	}
+
+	logs, sub, err := _ClaimVault.contract.WatchLogs(opts, "ClaimPaid", orderIdRule, buyerRule, queryIdRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(ClaimVaultClaimPaid)
+				if err := _ClaimVault.contract.UnpackLog(event, "ClaimPaid", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseClaimPaid is a log parse operation binding the contract event 0x1452c7c49daaf3c16d43eec536038b6301740b5b1d895e7ea5f0f03de0228177.
+//
+// Solidity: event ClaimPaid(uint256 indexed orderId, address indexed buyer, uint256 amount, bytes32 indexed queryId)
+func (_ClaimVault *ClaimVaultFilterer) ParseClaimPaid(log types.Log) (*ClaimVaultClaimPaid, error) {
+	event := new(ClaimVaultClaimPaid)
+	if err := _ClaimVault.contract.UnpackLog(event, "ClaimPaid", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }
 
 // ClaimVaultOrderRegisteredIterator is returned from FilterOrderRegistered and is used to iterate over the raw logs and unpacked data for OrderRegistered events raised by the ClaimVault contract.

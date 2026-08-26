@@ -55,6 +55,16 @@
 **Mitigation:** outside ClaimProof's control; documented for transparency with judges. ClaimProof inherits exactly the security level the protocol offers today, without adding optimistic assumptions about guarantees that don't exist yet.
 **Status:** disclosed platform risk.
 
+### T8 — Self-registering an order to drain the pool with a genuine, self-triggered event
+**Attack:** `DeliveryTrackerMock.createShipment` and `reportDeliveryFailure` are permissionless by design (see T6). If `ClaimVault.registerOrder` were also unrestricted, an attacker could register an order with themselves as `buyer` and an arbitrary `protectionAmount`, then create and fail their own shipment on Sepolia — a real, honestly-attestable `DeliveryFailed` event — and call `submitClaim` to drain the pool for the cost of gas, repeatable per `orderId`.
+**Mitigation:** `registerOrder` is restricted to the authorized `worker` address (`onlyWorker`) — it is the only gate on which `(orderId, buyer, protectionAmount)` triples `submitClaim` will ever honor a payout for, independent of how easy it is to trigger the on-chain event itself.
+**Status:** mitigated — covered by an automated test (`ClaimVault.t.sol`, `test_RegisterOrder_RevertsIfCallerIsNotWorker`). Found during Sprint 2's `entry-point-analyzer` pass, not present in the original Sprint 1 skeleton's design intent (the NatSpec comment predated the actual restriction).
+
+### T9 — Fake `DeliveryFailed` event from an untrusted Sepolia contract
+**Attack:** the Attestcoin precompile proves that a decoded log's *content* (topics/data) was genuinely included and attested — it does not know or care which contract emitted it. Without an extra check, any attacker-deployed Sepolia contract could emit an event with the exact same signature and topics as `DeliveryTrackerMock.DeliveryFailed`, get it attested (it's a real, honest transaction), and pass it off as a legitimate trigger for any registered `orderId`.
+**Mitigation:** `ClaimVault` stores `DeliveryTrackerMock`'s address as an immutable `sourceContract` set at deployment, and `submitClaim` only accepts a `DeliveryFailed` log whose emitter address (`log.address_`) matches it exactly — logs from any other contract are ignored even if the signature and topics match.
+**Status:** mitigated by design — covered by an automated test (`test_SubmitClaim_RevertsOnEventFromUntrustedContract`).
+
 ## Negative test cases covered (Foundry)
 
 - Submitting a claim with an invalid proof → revert
@@ -62,3 +72,7 @@
 - Submitting a claim for a source transaction with a failure status (`!= 0x1`) → revert
 - Submitting a suggested value above the policy cap → the value is capped, not honored as-is
 - Submitting a claim for a nonexistent `orderId` → revert
+- Registering an order as anyone other than the authorized worker → revert
+- Submitting a claim whose event's buyer doesn't match the registered order's buyer → revert
+- Submitting a claim whose `DeliveryFailed` log was emitted by a contract other than the trusted `sourceContract` → revert
+- Submitting a claim for an order that was already paid out → revert

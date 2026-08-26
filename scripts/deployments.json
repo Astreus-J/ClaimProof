@@ -5,6 +5,7 @@
   },
   "creditcoinTestnet": {
     "chainId": 102031,
-    "ClaimVault": "0x5c293e0C72E52fAca66befbEd2a65552431Ce46d"
+    "ClaimVault": "0xE05C7771921368e3d433accCa93e9E185acb12D3",
+    "EvmV1Decoder": "0xE671304e9d91b7df3a5D9019Ea58E6fC33EB4bb3"
   }
 }
