@@ -23,7 +23,7 @@ References: [product.md](product.md) (vision) · [architecture.md](architecture.
 - [x] Write the `ClaimVault.sol` skeleton (Creditcoin): `registerOrder`, pool structure, basic access guard
 - [x] Deploy both skeletons to testnet via `contracts/script/` (`DeployDeliveryTrackerMock.s.sol` on Sepolia via `forge script`; `DeployClaimVault.s.sol` on Creditcoin CC3 via `forge create`, since Creditcoin's RPC omits `mixHash` and breaks `forge script`'s local simulation — documented in the script file)
 - [x] Create `scripts/deployments.json` with the deployed addresses
-- [ ] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain` — blocked on this machine: `abigen` fails to build locally due to a non-standard Go toolchain (see feature branch notes); deferred until a standard Go environment is available or until Sprint 2/3 actually needs the bindings
+- [x] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain` — required installing a separate stable Go 1.24.6 toolchain alongside the system's non-standard 1.27 build to get `abigen`/`golangci-lint` working; bindings generated from the compiled ABI/bytecode in `contracts/out/`
 
 ### Exit criterion
 
