@@ -59,9 +59,13 @@ The exact request/response JSON schema was confirmed by reading the official Typ
 
 | Interface / Function | Use in ClaimProof |
 |---|---|
-| `INativeQueryVerifier.verifyAndEmit(chainKey, blockHeight, txBytes, merkleRoot, siblings, lowerEndpointDigest, continuityRoots)` on the native `0x0FD2` precompile | Synchronous call, within the `submitClaim` transaction itself, that re-verifies inclusion and continuity of the `DeliveryFailed` transaction before any fund transfer |
-| `EvmV1Decoder` (decoding library) | Extracts `orderId`, `buyer`, and `timestamp` from the raw bytes of the attested transaction, plus the **status** field (`0x1` = success) — checked explicitly, since the precompile only proves inclusion, not success |
-| `processedQueries` (internal mapping, keyed by `(chainKey, blockHeight, transactionIndex)`) | Prevents the same proof from being resubmitted to generate multiple payouts (anti-replay protection) |
+| `INativeQueryVerifier.verifyAndEmit(chainKey, blockHeight, txBytes, merkleProof, continuityProof)` on the native `0x0FD2` precompile | Synchronous call, within the `submitClaim` transaction itself, that re-verifies inclusion and continuity of the `DeliveryFailed` transaction before any fund transfer |
+| `INativeQueryVerifier.calculateTxIndex(merkleProof)` | Derives the transaction's index within its block, mixed into the anti-replay key (see below) — multiple transactions in the same block share a merkleRoot, so the root alone isn't a unique key |
+| `EvmV1Decoder.decodeReceiptFields` / `getLogsByEventSignature` (decoding library) | Extracts the receipt **status** field (`0x1` = success, checked explicitly since the precompile only proves inclusion) and the `DeliveryFailed` log's `orderId`/`buyer` from its topics |
+| Emitter-address check (`log.address_ == sourceContract`) | `EvmV1Decoder` filters logs by event signature only, not by which contract emitted them — `ClaimVault` additionally requires the log come from the trusted `DeliveryTrackerMock` address, or any Sepolia contract could forge a same-signature event (see docs/THREAT_MODEL.md, T9) |
+| `processedQueries` (mapping, keyed by `keccak256(chainKey, blockHeight, txIndex)`) | Prevents the same proof from being resubmitted to generate multiple payouts (anti-replay protection, T2) |
+
+**Dependency note:** `INativeQueryVerifier` is self-contained boilerplate every Attestcoin dApp defines itself (`contracts/src/interfaces/INativeQueryVerifier.sol`) — Gluwa doesn't publish it as an installable package. `EvmV1Decoder` is a real library from the `@gluwa/usc-contracts` npm package (v0.1.2, MIT), but that package has no public git repository to `forge install` from, so it's vendored verbatim at `contracts/lib/usc-contracts/decoding/EvmV1Decoder.sol` with a provenance comment.
 
 ## Full verification flow
 
