@@ -10,17 +10,44 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
+// MerkleProofEntry is one sibling hash in a Merkle inclusion proof.
+type MerkleProofEntry struct {
+	Hash   string `json:"hash"`
+	IsLeft bool   `json:"isLeft"`
+}
+
+// MerkleProof is the Merkle inclusion proof for one transaction within its
+// block.
+type MerkleProof struct {
+	Root     string             `json:"root"`
+	Siblings []MerkleProofEntry `json:"siblings"`
+}
+
+// ContinuityProof chains block digests so a single attested checkpoint
+// cryptographically anchors a whole range of blocks.
+type ContinuityProof struct {
+	LowerEndpointDigest string   `json:"lowerEndpointDigest"`
+	Roots               []string `json:"roots"`
+}
+
 // Proof holds the data `ClaimVault.submitClaim` needs to call the Attestcoin
-// precompile's verifyAndEmit(), as returned by the Prover API for a single
-// attested transaction.
+// precompile's verifyAndEmit(). This is the exact response shape of
+// `GET /api/v1/proof-by-tx/{chainKey}/{transactionHash}` on the Prover API,
+// confirmed against the official TypeScript SDK's source — see
+// docs/ATTESTCOIN_INTEGRATION.md.
 type Proof struct {
-	ChainKey        uint64
-	BlockHeight     uint64
-	EncodedTx       []byte
-	MerkleProof     []byte
-	ContinuityProof []byte
+	ChainKey        uint64          `json:"chainKey"`
+	HeaderNumber    uint64          `json:"headerNumber"`
+	TxIndex         uint64          `json:"txIndex"`
+	TxHash          string          `json:"txHash"`
+	TxBytes         string          `json:"txBytes"`
+	ContinuityProof ContinuityProof `json:"continuityProof"`
+	MerkleProof     MerkleProof     `json:"merkleProof"`
+	Cached          bool            `json:"cached"`
+	GeneratedAt     time.Time       `json:"generatedAt"`
 }
 
 // Client fetches proofs from the Attestcoin Prover REST API over HTTP.
@@ -38,14 +65,17 @@ func New(baseURL string, httpClient *http.Client) *Client {
 	return &Client{baseURL: baseURL, httpClient: httpClient}
 }
 
-// WaitUntilHeightAttested blocks until the given source-chain block height
-// has been attested by the Attestcoin protocol. Implemented in Sprint 3.
+// WaitUntilHeightAttested polls `GET /api/v1/attested-height/{chainKey}`
+// until its `attestedHeight` reaches blockHeight — the Prover API has no
+// push/webhook mechanism, so this is a client-side poll loop, matching the
+// official SDK's own implementation. Implemented in Sprint 3.
 func (c *Client) WaitUntilHeightAttested(ctx context.Context, chainKey, blockHeight uint64) error {
 	return fmt.Errorf("proofbuilder: WaitUntilHeightAttested not implemented until Sprint 3")
 }
 
 // GetProof fetches the inclusion and continuity proof for a transaction
-// hash. Implemented in Sprint 3.
+// hash via `GET /api/v1/proof-by-tx/{chainKey}/{transactionHash}`.
+// Implemented in Sprint 3.
 func (c *Client) GetProof(ctx context.Context, txHash string) (*Proof, error) {
 	return nil, fmt.Errorf("proofbuilder: GetProof not implemented until Sprint 3")
 }
