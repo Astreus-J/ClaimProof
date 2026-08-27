@@ -33,6 +33,9 @@ type fakeSepoliaCreator struct {
 }
 
 func (f *fakeSepoliaCreator) CreateShipment(ctx context.Context, orderID *big.Int, buyer common.Address, slaSeconds *big.Int) (*types.Transaction, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if f.createErr != nil {
 		return nil, f.createErr
 	}
@@ -40,6 +43,9 @@ func (f *fakeSepoliaCreator) CreateShipment(ctx context.Context, orderID *big.In
 }
 
 func (f *fakeSepoliaCreator) WaitMined(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if f.waitErr != nil {
 		return nil, f.waitErr
 	}
@@ -52,6 +58,9 @@ type fakeCreditcoinRegistrar struct {
 }
 
 func (f *fakeCreditcoinRegistrar) RegisterOrder(ctx context.Context, orderID *big.Int, buyer common.Address, protectionAmount *big.Int) (*types.Transaction, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if f.registerErr != nil {
 		return nil, f.registerErr
 	}
@@ -59,6 +68,9 @@ func (f *fakeCreditcoinRegistrar) RegisterOrder(ctx context.Context, orderID *bi
 }
 
 func (f *fakeCreditcoinRegistrar) WaitMined(ctx context.Context, tx *types.Transaction) (*types.Receipt, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if f.waitErr != nil {
 		return nil, f.waitErr
 	}
@@ -168,6 +180,23 @@ func TestHandleCreateOrder_ReturnsBadGatewayWhenRegisterOrderFails(t *testing.T)
 
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
 	assert.Contains(t, rec.Body.String(), "shipment created")
+}
+
+func TestHandleCreateOrder_SurvivesClientDisconnect(t *testing.T) {
+	h := &orderHandler{
+		sepolia:    &fakeSepoliaCreator{},
+		creditcoin: &fakeCreditcoinRegistrar{},
+		logger:     silentLogger(),
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // simulate the buyer's browser disconnecting before the on-chain submissions finish
+
+	req := httptest.NewRequest(http.MethodPost, "/api/orders", bytes.NewBufferString(validBody())).WithContext(ctx)
+	rec := httptest.NewRecorder()
+	h.handleCreateOrder(rec, req)
+
+	assert.Equal(t, http.StatusCreated, rec.Code, "a disconnected client must not abort in-flight chain submissions")
 }
 
 func TestHandleCreateOrder_ReturnsBadGatewayWhenRegisterOrderTxFailsToMine(t *testing.T) {

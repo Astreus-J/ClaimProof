@@ -6,10 +6,18 @@ import (
 	"log/slog"
 	"math/big"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+// chainSubmissionTimeout bounds the two-chain submit-and-confirm sequence in
+// handleCreateOrder. It is intentionally independent of the HTTP request's
+// own context (see handleCreateOrder) so that a buyer closing their browser
+// mid-purchase can't abort an already-broadcast transaction and leave a
+// shipment created on Sepolia with no matching order registered on Creditcoin.
+const chainSubmissionTimeout = 2 * time.Minute
 
 // sepoliaCreator is the subset of *chain.SepoliaClient the order handler
 // needs — an interface so it can be faked in tests without a live RPC.
@@ -78,7 +86,13 @@ func (h *orderHandler) handleCreateOrder(w http.ResponseWriter, r *http.Request)
 
 	orderID := new(big.Int).SetUint64(req.OrderID)
 	slaSeconds := new(big.Int).SetUint64(req.SLASeconds)
-	ctx := r.Context()
+
+	// Detached from r.Context(): once we start submitting transactions, a
+	// client disconnect must not cancel them mid-flight (see
+	// chainSubmissionTimeout).
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), chainSubmissionTimeout)
+	defer cancel()
+
 	logger := h.logger.With("orderId", req.OrderID)
 
 	shipmentTx, err := h.sepolia.CreateShipment(ctx, orderID, buyer, slaSeconds)
