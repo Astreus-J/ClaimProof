@@ -178,7 +178,10 @@ contract ClaimVault {
     ///         precompile — and pays out that order's registered buyer.
     /// @dev Deliberately permissionless: anyone may relay a valid proof. Safety comes
     ///      from Attestcoin's own re-verification, the emitter-address check, and the
-    ///      payout cap — never from restricting who can call this function.
+    ///      payout cap — never from restricting who can call this function. The AI
+    ///      claims agent's `suggestedPayout` may only ever narrow the payout — it can
+    ///      lower it below `protectionAmount` (a partial refund) but can never raise it
+    ///      above `protectionAmount` or the on-chain `payoutCap` (see docs/THREAT_MODEL.md, T4).
     /// @param chainKey Attestcoin's identifier for the source chain (Ethereum Sepolia).
     /// @param blockHeight Sepolia block height containing the `DeliveryFailed` transaction.
     /// @param encodedTransaction The attested transaction + receipt, from the Prover API.
@@ -186,6 +189,8 @@ contract ClaimVault {
     /// @param siblings Merkle inclusion proof siblings for the transaction.
     /// @param lowerEndpointDigest Continuity proof's lower endpoint digest.
     /// @param continuityRoots Continuity proof's chain of block digests.
+    /// @param suggestedPayout The AI claims agent's suggested payout, in wei — advisory
+    ///        only, always bounded below by `protectionAmount` and `payoutCap`.
     /// @return orderId The order the verified claim was paid out for.
     /// @return payoutAmount The amount released to the order's buyer.
     function submitClaim(
@@ -195,7 +200,8 @@ contract ClaimVault {
         bytes32 merkleRoot,
         INativeQueryVerifier.MerkleProofEntry[] calldata siblings,
         bytes32 lowerEndpointDigest,
-        bytes32[] calldata continuityRoots
+        bytes32[] calldata continuityRoots,
+        uint256 suggestedPayout
     ) external returns (uint256 orderId, uint256 payoutAmount) {
         INativeQueryVerifier.MerkleProof memory merkleProof =
             INativeQueryVerifier.MerkleProof({root: merkleRoot, siblings: siblings});
@@ -224,7 +230,9 @@ contract ClaimVault {
         if (order.buyer != buyer) revert OrderBuyerMismatch(orderId);
         if (order.claimed) revert OrderAlreadyClaimed(orderId);
 
-        payoutAmount = order.protectionAmount > payoutCap ? payoutCap : order.protectionAmount;
+        uint256 boundedBySuggestion =
+            suggestedPayout < order.protectionAmount ? suggestedPayout : order.protectionAmount;
+        payoutAmount = boundedBySuggestion > payoutCap ? payoutCap : boundedBySuggestion;
         order.claimed = true;
 
         emit ClaimPaid(orderId, buyer, payoutAmount, queryId);

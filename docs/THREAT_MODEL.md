@@ -37,8 +37,8 @@
 
 ### T4 — AI suggests a manipulated or excessive value
 **Attack:** the AI Claims Agent (compromised, prompt-injected, or simply buggy) suggests a payout far above what's reasonable.
-**Mitigation:** the contract enforces an on-chain policy cap (a maximum percentage of the original order value, set during `registerOrder`), independent of the AI's suggestion. The AI never has signing authority.
-**Status:** mitigated by design — validated by an automated test covering out-of-cap values.
+**Mitigation:** two independent layers. Off-chain, `internal/claimsagent.Agent.SuggestPayout` clamps the LLM's suggested percentage to [0, 100] and the resulting amount to a configured policy cap before ever building a transaction. On-chain, `ClaimVault.submitClaim`'s `suggestedPayout` parameter is bounded by `min(suggestedPayout, protectionAmount, payoutCap)` regardless of what either layer above computed — the AI never has signing authority, and a compromised worker relaying an inflated `suggestedPayout` still cannot exceed the registered order's own protection amount or the on-chain cap.
+**Status:** mitigated by design — validated by automated tests at both layers (`claimsagent` tests for the off-chain cap; `ClaimVault.t.sol`'s `test_SubmitClaim_SuggestedValueAbovePolicyCap_IsCappedNotHonored` for the on-chain cap) and by a real end-to-end run where the Gemini-backed claims agent suggested a genuine payout, submitted automatically by the worker with no manual step.
 
 ### T5 — Compromise of the worker's private key
 **Attack:** an attacker obtains the private key the worker uses to submit claims.

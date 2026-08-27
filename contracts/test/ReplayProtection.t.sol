@@ -39,7 +39,8 @@ contract ReplayProtectionTest is AttestcoinFixtures {
             MERKLE_ROOT,
             new INativeQueryVerifier.MerkleProofEntry[](0),
             LOWER_ENDPOINT_DIGEST,
-            new bytes32[](0)
+            new bytes32[](0),
+            PROTECTION_AMOUNT
         );
     }
 
