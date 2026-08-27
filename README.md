@@ -72,18 +72,25 @@ Full breakdown in [ARCHITECTURE.md](ARCHITECTURE.md). Specific Attestcoin Protoc
 
 ## Project status
 
-> Documentation and planning phase complete. Implementation in progress — see [docs/SPRINTS.md](docs/SPRINTS.md) for the sprint-by-sprint development plan through the submission deadline (2026-09-13, 23:59 ET).
+> Contracts, backend, and frontend implemented and deployed to testnet; the full flow (purchase → delivery failure → Attestcoin proof → AI-suggested payout → on-chain payout) has been run successfully live, repeatedly. See [docs/SPRINTS.md](docs/SPRINTS.md) for the sprint-by-sprint development plan through the submission deadline (2026-09-13, 23:59 ET) and current progress.
 
 ## Running locally
+
+Both paths below need:
+- A dedicated **testnet-only** wallet private key, funded with [Sepolia ETH](https://www.alchemy.com/faucets/ethereum-sepolia) and [Creditcoin CC3 testnet CTC](https://creditcoin.org/faucet/) — never a personal or mainnet key.
+- An API key for one supported LLM provider (Gemini, OpenAI, or Anthropic) for the AI claims agent.
+- The deployed contract addresses from [`scripts/deployments.json`](scripts/deployments.json) — the single source of truth for `DELIVERY_TRACKER_MOCK_ADDRESS` / `CLAIM_VAULT_ADDRESS` (Sepolia / Creditcoin sections respectively).
 
 ### Docker (one command)
 
 ```bash
-cp .env.example .env   # fill in RPC URLs, contract addresses, worker key, LLM key
+cp .env.example .env
+# Edit .env: paste the addresses from scripts/deployments.json, your RPC URLs,
+# your testnet private key, and your LLM API key.
 docker compose up --build
 ```
 
-Starts `cmd/api` (:8080), `cmd/worker`, and the frontend (:3000) together. Backend images are multi-stage builds on `distroless/static`; the frontend uses Next.js's standalone output — see `docker-compose.yml` and each service's `Dockerfile`.
+Starts `cmd/api` (:8080), `cmd/worker`, and the frontend (:3000) together — open http://localhost:3000. Backend images are multi-stage builds on `distroless/static`; the frontend uses Next.js's standalone output — see `docker-compose.yml` and each service's `Dockerfile`.
 
 ### Without Docker (per-service, for active development)
 
@@ -94,18 +101,23 @@ forge install
 forge build
 forge test
 
-# Backend / worker
+# Backend — both must run together for the full flow:
+# cmd/api registers new orders (the Store's buy button calls it);
+# cmd/worker watches for failures and drives them to payout.
 cd backend
+cp .env.example .env   # fill in as described above
 go mod tidy
-go run ./cmd/worker   # or ./cmd/api
+go run ./cmd/api      # in one terminal
+go run ./cmd/worker   # in another
 
 # Frontend
 cd frontend
+cp .env.example .env.local   # fill in the same contract addresses (NEXT_PUBLIC_ prefixed)
 npm install
 npm run dev
 ```
 
-Testnet deployment addresses (Sepolia + Creditcoin CC3) are published in `scripts/deployments.json`.
+Open http://localhost:3000, connect a wallet holding the same testnet CTC/ETH used for the backend key (or any address — only the backend key ever signs transactions), and buy protection. Full end-to-end timing note: after a delivery failure is reported, `cmd/worker` typically takes 5-10 minutes to reach a payout, waiting on Attestcoin's attestation — this is normal, not a hang (see [docs/ATTESTCOIN_INTEGRATION.md](docs/ATTESTCOIN_INTEGRATION.md)).
 
 ## Networks used
 
