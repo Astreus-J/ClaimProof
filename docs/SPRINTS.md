@@ -136,7 +136,7 @@ Five consecutive runs of the full flow with no manual intervention beyond the ex
 
 ### Tasks
 
-- [ ] Expand the Foundry test suite (fuzzing on payout values and the policy cap)
+- [x] Expand the Foundry test suite (fuzzing on payout values and the policy cap)
 - [ ] Review and finalize [THREAT_MODEL.md](THREAT_MODEL.md) with any findings from previous sprints
 - [ ] Review [ATTESTCOIN_INTEGRATION.md](ATTESTCOIN_INTEGRATION.md) with the final real addresses and behavior
 - [ ] Review [../SECURITY.md](../SECURITY.md)
@@ -146,6 +146,10 @@ Five consecutive runs of the full flow with no manual intervention beyond the ex
 ### Exit criterion
 
 Someone outside the project can clone the repository and run the full flow following only the README, with no help.
+
+**Fuzzing:** added `testFuzz_SubmitClaim_PayoutIsExactlyTheMinOfSuggestionProtectionAndCap` (payout formula holds across the full `uint256` range) and `testFuzz_SubmitClaim_RevertsWithoutStateChangeWhenPoolBalanceInsufficient` (locks in the underfunded-pool scenario hit live during Sprint 5), plus two explicit zero-cap/zero-suggestion edge cases. 38 Foundry tests pass.
+
+**Static analysis:** `entry-point-analyzer` re-run — no new findings (T8/T9 from Sprint 2 remain the only access-control issues, both already mitigated). `semgrep` (important-only, with Trail of Bits/Decurity/dgryski third-party rules) found 6 issues, both categories addressed: 5 mutable GitHub Actions tags (pinned to commit SHAs in both workflows) and 1 low-confidence Solidity low-level-call finding (reviewed and documented inline in `ClaimVault.sol` — not exploitable given the trust model and existing checks-effects-interactions ordering). `codeql` deferred to before final submission, per this sprint's own skill-table timing — Semgrep's third-party-rule coverage was judged sufficient for sign-off.
 
 ---
 
