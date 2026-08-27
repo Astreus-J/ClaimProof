@@ -237,6 +237,13 @@ contract ClaimVault {
 
         emit ClaimPaid(orderId, buyer, payoutAmount, queryId);
 
+        // Low-level call flagged by static analysis (Decurity's arbitrary-low-level-call
+        // rule) — not arbitrary in practice: `buyer` is read from a registered Order, only
+        // ever set by the trusted worker via registerOrder (onlyWorker), never by this
+        // function's caller. Calldata is empty, so this is a plain value transfer, not a
+        // delegatecall or attacker-chosen selector. `claimed` is already set above
+        // (checks-effects-interactions), so a reentrant call for this same order/proof
+        // hits OrderAlreadyClaimed regardless of what `buyer` does with the funds.
         (bool sent,) = buyer.call{value: payoutAmount}("");
         if (!sent) revert PayoutTransferFailed();
     }

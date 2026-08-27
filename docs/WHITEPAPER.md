@@ -1,6 +1,8 @@
 # ClaimProof — Whitepaper
 
-*Source for the deck/whitepaper PDF required by the submission. Export via any Markdown → PDF converter (e.g., pandoc) close to Sprint 7.*
+*Source for the deck/whitepaper PDF required by the submission.*
+
+> **Exported:** [`ClaimProof-Whitepaper.pdf`](ClaimProof-Whitepaper.pdf) — this content plus the architecture excerpt (sequence diagram + components table) from [../ARCHITECTURE.md](../ARCHITECTURE.md). Source HTML at [`whitepaper-export.html`](whitepaper-export.html); regenerate by rendering it to PDF (e.g., open in a browser and print to PDF, or headless Chromium) if this file's content changes.
 
 ---
 

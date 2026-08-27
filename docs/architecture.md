@@ -16,8 +16,8 @@ sequenceDiagram
     participant Attest as Attestcoin Precompile 0x0FD2 (Creditcoin)
     participant Vault as ClaimVault (Creditcoin)
 
-    Buyer->>Store: Buy + pay protection premium
-    Store->>Vault: registerOrder(orderId, buyer, premium)
+    Buyer->>Store: Buy (protection included, no separate premium tx)
+    Store->>Vault: registerOrder(orderId, buyer, protectionAmount)
     Store->>Tracker: createShipment(orderId, SLA)
     Note over Tracker: SLA expires with no delivery confirmation
     Tracker-->>Tracker: emit DeliveryFailed(orderId, buyer, timestamp)
@@ -37,14 +37,15 @@ sequenceDiagram
 
 | Component | Responsibility |
 |---|---|
-| **Frontend** | Next.js + wagmi/ethers, WalletConnect. Storefront demo (purchase + protection) and claims dashboard with live status. |
-| **Backend / Worker** | Go (`cmd/worker` + `internal/`). Listens for `DeliveryFailed` on Sepolia, obtains the proof by calling the Attestcoin Prover REST API directly (no official Go SDK), consults the AI Claims Agent, submits `submitClaim` on Creditcoin via `go-ethereum`. |
+| **Frontend** | Next.js + wagmi + viem, WalletConnect. Storefront demo (purchase + protection) and claims dashboard with live status. |
+| **Backend — `cmd/api`** | Go. The Store's operator service: signs `registerOrder`/`createShipment` on the buyer's behalf, since both are worker-gated (see T8). The buyer's wallet only identifies the payout address. |
+| **Backend — `cmd/worker`** | Go (`internal/`). Listens for `DeliveryFailed` on Sepolia, obtains the proof by calling the Attestcoin Prover REST API directly (no official Go SDK), consults the AI Claims Agent, submits `submitClaim` on Creditcoin via `go-ethereum`. |
 | **Smart contracts** | `DeliveryTrackerMock.sol` (Sepolia) emits the trigger event. `ClaimVault.sol` (Creditcoin) holds the pool, calls `INativeQueryVerifier.verifyAndEmit()` on the `0x0FD2` precompile, decodes via `EvmV1Decoder`, checks `processedQueries` (anti-replay), and pays out. |
 | **Creditcoin** | Execution and payment chain — hosts `ClaimVault` and the Attestcoin precompile. |
 | **Attestcoin** | Cross-chain verification layer — the only source of truth accepted to authorize a payout. |
 | **Source chain** | Ethereum Sepolia — the only chain Attestcoin supports as a source today. `DeliveryTrackerMock` is team-controlled, removing dependency on a real logistics oracle for the demo. |
-| **Indexer / Database** | Lightweight cache (SQLite/Postgres) purely so the dashboard renders history quickly — never the source of truth for a payout. |
-| **Wallet / Auth** | MetaMask/WalletConnect on both sides (Sepolia + Creditcoin testnet); wallet-based authentication only. |
+| **Indexer / Database** | No database — the dashboard reads both chains directly on every poll. Tracked orders live in browser `localStorage`; the AI's reasoning lives in `cmd/api`'s in-memory store. Never the source of truth for a payout either way. |
+| **Wallet / Auth** | MetaMask/WalletConnect; wallet-based authentication only. In practice the buyer's wallet only signs on Sepolia (the demo's failure-simulation button) — every `ClaimVault` write is signed by the backend's worker key. |
 
 ## MVP scope
 

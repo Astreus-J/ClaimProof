@@ -25,6 +25,7 @@ The entire system is deployed and demonstrated **exclusively on testnet** (Ether
 - Third-party audit of the contracts (out of scope for the hackathon timeline; the CertiK audit credits offered by the hackathon are a natural next step post-submission)
 - Front-running resistance on claim submission (mitigable, but out of MVP scope)
 - A compliance/KYC model for high-value payouts
+- Claims whose triggering events land within the same Attestcoin attestation window can have their continuity proofs go stale together and fail to submit (found via live testing, not a security hole — no funds move on failure — but an availability gap; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) T11)
 
 ## Responsible disclosure
 

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ClaimProof — Whitepaper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --paper: #f6f9f8; --ink: #142320; --surface: #ffffff; --border: #d8e3e0; --muted: #5b6c68;
+    --accent: #10716f; --gold: #9c6b1a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    margin: 0;
+    padding: 0;
+    font-size: 11pt;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 56px;
+  }
+  .cover {
+    padding: 100px 56px 60px;
+    text-align: center;
+    page-break-after: always;
+  }
+  .cover .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    font-size: 10pt;
+  }
+  .cover h1 {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 42pt;
+    margin: 16px 0 8px;
+  }
+  .cover .tagline {
+    font-size: 13pt;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .cover .meta {
+    margin-top: 60px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9pt;
+    color: var(--muted);
+  }
+  h1.section-title {
+    font-family: 'Newsreader', serif;
+    font-size: 22pt;
+    font-style: italic;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+    margin-top: 0;
+  }
+  h2 {
+    font-family: 'Newsreader', serif;
+    font-size: 15pt;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--ink);
+    margin-top: 28px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+  }
+  p, li { color: var(--ink); }
+  strong { color: var(--ink); font-weight: 600; }
+  a { color: var(--accent); }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 0.92em;
+  }
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .diagram svg { max-width: 100%; height: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 9.5pt;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--surface);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .gold { color: var(--gold); font-weight: 600; }
+  .accent { color: var(--accent); font-weight: 600; }
+  .footer-note {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 8.5pt;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Whitepaper</div>
+  <h1>ClaimProof</h1>
+  <p class="tagline">A claim that pays itself — because the proof is faster than the adjuster.</p>
+  <div class="meta">BUIDL CTC 2026 Fall — AI Track · Ethereum Sepolia + Creditcoin CC3 Testnet</div>
+</div>
+
+<div class="page">
+
+<h1 class="section-title">1. Summary</h1>
+<p>ClaimProof is a parametric insurance protocol where payment authorization never depends on a single actor's word — not the insurer, not the adjuster, not even the AI that evaluates the claim. Payment only happens after the trigger event is re-verified on-chain, through the Attestcoin Protocol, against the chain where it actually occurred.</p>
+
+<h1 class="section-title">2. The problem</h1>
+<p>Traditional insurance claims — and, in particular, delivery guarantees in e-commerce — depend on slow, opaque dispute processes: the buyer complains, the platform investigates, a human decides. This creates friction, operational cost, and distrust when the parties have conflicting interests (the platform doesn't want to pay; the buyer wants a guarantee they'll be made whole).</p>
+
+<h1 class="section-title">3. The insight</h1>
+<p>If the event that should trigger a claim already exists as a verifiable transaction on some chain (a delivery confirmation, a recorded failure, a tracking event), you don't need an adjuster to decide "did this happen?" — you only need to prove it.</p>
+
+<h1 class="section-title">4. The solution</h1>
+<p>ClaimProof separates two decisions that traditional insurance systems conflate:</p>
+<ol>
+  <li><strong>"Did this happen?"</strong> — answered exclusively by cryptographic proof via the Attestcoin Protocol, never by human or AI opinion.</li>
+  <li><strong>"How much to pay?"</strong> — answered by an AI agent, but always bounded by an on-chain policy cap, never decided freely.</li>
+</ol>
+<p>This separation is what makes the system resistant both to buyer fraud (no claim without real proof) and to manipulation of the AI layer (no authorization beyond what policy allows).</p>
+
+<h1 class="section-title">5. How it works (product view)</h1>
+<ol>
+  <li>The buyer purchases delivery protection along with the order.</li>
+  <li>If the delivery fails (an event recorded on-chain on Ethereum Sepolia), the system detects it automatically.</li>
+  <li>The AI evaluates the appropriate refund amount.</li>
+  <li>The contract on Creditcoin re-verifies the event's proof via Attestcoin before releasing any amount.</li>
+  <li>The buyer receives the payout automatically, with no support ticket required.</li>
+</ol>
+
+<h1 class="section-title">6. Why blockchain, why Creditcoin, why Attestcoin</h1>
+<ul>
+  <li><strong>Why blockchain:</strong> eliminates the information asymmetry between the insured and the insurer — the proof is public and verifiable by any party, not just the insurer.</li>
+  <li><strong>Why Creditcoin:</strong> it's the chain where the Attestcoin Protocol's native precompile runs; hosting the business logic there avoids reimplementing cross-chain verification on another L1.</li>
+  <li><strong>Why Attestcoin:</strong> it's the only source of truth accepted to authorize a payment. Remove Attestcoin, and the system loses the ability to reliably know whether the trigger event actually occurred — the AI would have to blindly trust unverified data.</li>
+</ul>
+
+<h1 class="section-title">7. Competitive differential</h1>
+<p>No known project in the Creditcoin/Attestcoin ecosystem addresses parametric insurance as of this submission. Most Attestcoin integrations explore credit/settlement (loans, collateral, escrow release) — ClaimProof applies the same verification primitive to a new product domain, with a straightforward business model (fee on the protection premium) and an addressable market far larger than developer-facing DeFi infrastructure.</p>
+
+<h1 class="section-title">8. Business model</h1>
+<ul>
+  <li><strong>Short term:</strong> a fee on the protection premium paid by the buyer (10–20% overhead).</li>
+  <li><strong>Medium term:</strong> a spread on the underwriting pool as more capital providers participate.</li>
+  <li><strong>Long term:</strong> cryptographically verified claims data becomes a proprietary risk-pricing asset — the more volume, the better the pricing, a competitive advantage that's hard to replicate without the same verified history.</li>
+</ul>
+
+<h1 class="section-title">9. Roadmap</h1>
+<ul>
+  <li><strong>Hackathon (MVP):</strong> e-commerce delivery-failure trigger, testnet, AI bounded by policy.</li>
+  <li><strong>Post-hackathon, short term:</strong> replace <code>DeliveryTrackerMock</code> with a real logistics provider integration; add a second trigger type (e.g., flight delay).</li>
+  <li><strong>Medium term:</strong> underwriting pool open to multiple capital providers; expansion to additional source chains as the Attestcoin Protocol adds support.</li>
+  <li><strong>CEIP application:</strong> pursue the investment fast-track offered to the hackathon's top three finishers to accelerate this expansion.</li>
+</ul>
+
+</div>
+
+<div class="page" style="page-break-before: always;">
+
+<h1 class="section-title">Architecture excerpt</h1>
+<p><em>The user buys protection → the system detects an on-chain delivery failure → Attestcoin verifies the event is real → Creditcoin releases the payment, with the AI deciding only the amount, never the authorization.</em></p>
+
+<h2>Sequence diagram</h2>
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    participant Buyer
+    participant Store as Storefront (frontend)
+    participant Tracker as DeliveryTrackerMock (Ethereum Sepolia)
+    participant Worker as ClaimProof Worker (off-chain)
+    participant AI as AI Claims Agent
+    participant Attest as Attestcoin Precompile 0x0FD2 (Creditcoin)
+    participant Vault as ClaimVault (Creditcoin)
+
+    Buyer->>Store: Buy (protection included, no separate premium tx)
+    Store->>Vault: registerOrder(orderId, buyer, protectionAmount)
+    Store->>Tracker: createShipment(orderId, SLA)
+    Note over Tracker: SLA expires with no delivery confirmation
+    Tracker-->>Tracker: emit DeliveryFailed(orderId, buyer, timestamp)
+    Worker->>Tracker: listens for DeliveryFailed
+    Worker->>Worker: waitUntilHeightAttested() + getProof()
+    Worker->>AI: evaluate claim (order value, context)
+    AI-->>Worker: suggested payout amount (within policy)
+    Worker->>Vault: submitClaim(proof, suggestedAmount)
+    Vault->>Attest: verifyAndEmit(chainKey, blockHeight, txBytes, merkleProof, continuityProof)
+    Attest-->>Vault: inclusion + continuity verified
+    Vault->>Vault: decode event (EvmV1Decoder) + check processedQueries
+    Vault->>Buyer: transfer automatic payout
+    Vault-->>Store: emit ClaimPaid(orderId, amount)
+</pre>
+</div>
+
+<h2>Components</h2>
+<table>
+  <tr><th>Component</th><th>Role</th></tr>
+  <tr><td><strong>Frontend</strong></td><td>Next.js + wagmi + viem. Storefront (buy protection) and Dashboard (live status: Active → Failure detected → Verifying proof → Paid, plus the AI's reasoning).</td></tr>
+  <tr><td><strong><code>cmd/api</code></strong></td><td>The Store's operator service — signs <code>registerOrder</code>/<code>createShipment</code> on the buyer's behalf, since both are worker-gated.</td></tr>
+  <tr><td><strong><code>cmd/worker</code></strong></td><td>Listens for <code>DeliveryFailed</code>, obtains the Attestcoin proof, consults the AI claims agent, submits <code>submitClaim</code>.</td></tr>
+  <tr><td><strong>Smart contracts</strong></td><td><code>DeliveryTrackerMock.sol</code> (Sepolia) emits the trigger. <code>ClaimVault.sol</code> (Creditcoin) holds the pool and calls the Attestcoin precompile before any payout.</td></tr>
+  <tr><td><strong>Attestcoin</strong></td><td>The only source of truth accepted to authorize a payment — the core invariant of the whole system.</td></tr>
+</table>
+
+<p style="margin-top:28px;"><span class="accent">Core invariant:</span> the AI may only <em>suggest</em> a payout amount, capped by an on-chain policy. Payout authorization always requires a successful <code>verifyAndEmit()</code> call against the Attestcoin precompile inside the same transaction as the payout.</p>
+
+<div class="footer-note">ClaimProof — full source, tests, and documentation at the submitted GitHub repository.</div>
+
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', fontFamily: 'IBM Plex Sans' });
+</script>
+</body>
+</html>

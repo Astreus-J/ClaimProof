@@ -31,6 +31,8 @@
 
 ## Pitch (60 seconds)
 
+Talking points (for reference while rehearsing):
+
 - **First line:** "ClaimProof is insurance that pays for itself, because the proof arrives before the adjuster does."
 - **Problem:** traditional claims depend on trusting a third party — slow, contestable, opaque.
 - **Insight:** if the event that triggers a claim already exists as a verifiable transaction on another chain, you don't need an adjuster — you need proof.
@@ -40,6 +42,24 @@
 - **Creditcoin:** the execution and payment chain, where the Attestcoin precompile runs natively.
 - **Impact & business:** any marketplace can offer a guarantee without becoming an insurer; revenue comes from the fee on the protection premium.
 - **Future:** the same architecture scales to flights, DePIN, and RWA — anywhere a verifiable event can serve as a trigger.
+
+### Ready-to-speak script (161 words, ~60s at a natural pace)
+
+> ClaimProof is insurance that pays for itself — because the proof arrives before the adjuster does.
+>
+> Claims today depend on trusting a third party's word: slow, contestable, opaque. But if the triggering event already exists as a verifiable transaction on another chain, you don't need an adjuster — you need proof.
+>
+> That's ClaimProof. An AI evaluates the claim and suggests the payout — but never authorizes it. The contract only pays after re-verifying on-chain, through Attestcoin, that the event really happened.
+>
+> Attestcoin is the only source of truth our contract accepts. Creditcoin is where that verification and the payout happen natively.
+>
+> None of this hackathon's other fourteen projects touch insurance, and none combine AI evaluation with payout locked by cryptographic proof.
+>
+> Any marketplace can offer this guarantee without becoming an insurer — we earn a fee on the premium. And the same architecture scales to flights, DePIN, real-world assets — anywhere a verifiable event can trigger a payout.
+>
+> ClaimProof: proof, not promises.
+
+Rehearsal note: 161 words lands at ~60s around 155–165 wpm (typical confident speaking pace for a rehearsed pitch); read it aloud a few times and trim a clause if it's running long for your own pace.
 
 ## Submission checklist
 
