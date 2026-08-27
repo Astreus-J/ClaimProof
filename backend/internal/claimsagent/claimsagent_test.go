@@ -73,24 +73,36 @@ func TestSuggestPayout_FullRefundWhenLLMSuggestsHundredPercent(t *testing.T) {
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 100, "reasoning": "package never arrived"}`, 1)}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "package never arrived",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(1_000), amount)
+	assert.Equal(t, big.NewInt(1_000), suggestion.AmountWei)
+}
+
+func TestSuggestPayout_ReturnsTheLLMsOwnReasoningVerbatim(t *testing.T) {
+	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 30, "reasoning": "minor, one-day SLA breach"}`, 1)}
+	a := New(llm, big.NewInt(10_000))
+
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
+		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "1 day late",
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "minor, one-day SLA breach", suggestion.Reasoning)
 }
 
 func TestSuggestPayout_PartialRefundHonored(t *testing.T) {
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 30, "reasoning": "minor SLA breach"}`, 1)}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "1 day late",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(300), amount)
+	assert.Equal(t, big.NewInt(300), suggestion.AmountWei)
 }
 
 func TestSuggestPayout_CappedAtPolicyCapEvenWhenLLMSuggestsMore(t *testing.T) {
@@ -99,71 +111,72 @@ func TestSuggestPayout_CappedAtPolicyCapEvenWhenLLMSuggestsMore(t *testing.T) {
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 100}`, 1)}
 	a := New(llm, big.NewInt(500))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "never arrived",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(500), amount)
+	assert.Equal(t, big.NewInt(500), suggestion.AmountWei)
 }
 
 func TestSuggestPayout_ClampsOutOfRangePercentageFromLLM(t *testing.T) {
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 250}`, 1)}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(1_000), amount, "a percentage above 100 must clamp to 100, not overpay")
+	assert.Equal(t, big.NewInt(1_000), suggestion.AmountWei, "a percentage above 100 must clamp to 100, not overpay")
 }
 
 func TestSuggestPayout_ClampsNegativePercentageFromLLM(t *testing.T) {
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": -50}`, 1)}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(0), amount)
+	assert.Equal(t, big.NewInt(0), suggestion.AmountWei)
 }
 
 func TestSuggestPayout_FallsBackToFullAmountOnUnparsableLLMResponse(t *testing.T) {
 	llm := &stubLLMClient{response: "sorry, I cannot help with that"}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(1_000), amount, "an unparsable AI response must not deny a verified claim")
+	assert.Equal(t, big.NewInt(1_000), suggestion.AmountWei, "an unparsable AI response must not deny a verified claim")
+	assert.Contains(t, suggestion.Reasoning, "could not be parsed")
 }
 
 func TestSuggestPayout_HandlesMarkdownFencedJSON(t *testing.T) {
 	llm := &stubLLMClient{response: "```json\n" + withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 40}`, 1) + "\n```"}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(400), amount)
+	assert.Equal(t, big.NewInt(400), suggestion.AmountWei)
 }
 
 func TestSuggestPayout_ReturnsErrorWhenLLMCallFails(t *testing.T) {
 	llm := &stubLLMClient{err: errors.New("network error")}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
-	assert.Nil(t, amount)
+	assert.Nil(t, suggestion)
 	assert.Error(t, err)
 }
 
@@ -176,22 +189,23 @@ func TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMismatches(t 
 	llm := &stubLLMClient{response: withOrderID(`{"orderIdConfirmation": %d, "suggestedPercentage": 10}`, 999)}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(1_000), amount, "an order-ID mismatch must fall back to a full refund, ignoring the mismatched percentage")
+	assert.Equal(t, big.NewInt(1_000), suggestion.AmountWei, "an order-ID mismatch must fall back to a full refund, ignoring the mismatched percentage")
+	assert.Contains(t, suggestion.Reasoning, "did not match")
 }
 
 func TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMissing(t *testing.T) {
 	llm := &stubLLMClient{response: `{"suggestedPercentage": 10}`}
 	a := New(llm, big.NewInt(10_000))
 
-	amount, err := a.SuggestPayout(context.Background(), ClaimContext{
+	suggestion, err := a.SuggestPayout(context.Background(), ClaimContext{
 		OrderID: 1, ProtectionAmount: big.NewInt(1_000), FailureDescription: "x",
 	})
 
 	require.NoError(t, err)
-	assert.Equal(t, big.NewInt(1_000), amount)
+	assert.Equal(t, big.NewInt(1_000), suggestion.AmountWei)
 }

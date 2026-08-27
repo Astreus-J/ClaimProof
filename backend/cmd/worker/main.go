@@ -21,6 +21,7 @@ import (
 	"github.com/Astreus-J/ClaimProof/backend/internal/claimsagent"
 	"github.com/Astreus-J/ClaimProof/backend/internal/listener"
 	"github.com/Astreus-J/ClaimProof/backend/internal/proofbuilder"
+	"github.com/Astreus-J/ClaimProof/backend/internal/reasoningreporter"
 )
 
 // sepoliaChainKey is Attestcoin's chain key identifying Ethereum Sepolia as
@@ -63,6 +64,8 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	}
 	agent := claimsagent.New(llm, cfg.policyCapWei)
 
+	reasoningClient := reasoningreporter.New(cfg.apiBaseURL, nil)
+
 	chainClient, err := chain.New(ctx, cfg.creditcoinRPCURL, cfg.workerPrivateKey, big.NewInt(chain.CreditcoinTestnetChainID), cfg.claimVaultAddress)
 	if err != nil {
 		return fmt.Errorf("create chain client: %w", err)
@@ -93,7 +96,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 			inFlight.Add(1)
 			go func() {
 				defer inFlight.Done()
-				processClaim(ctx, logger, pb, agent, chainClient, event)
+				processClaim(ctx, logger, pb, agent, chainClient, reasoningClient, event)
 			}()
 		}
 	}
@@ -110,6 +113,7 @@ func processClaim(
 	pb *proofbuilder.Client,
 	agent *claimsagent.Agent,
 	chainClient *chain.Client,
+	reasoningClient *reasoningreporter.Client,
 	event listener.DeliveryFailedEvent,
 ) {
 	logger = logger.With("orderId", event.OrderID, "txHash", event.TxHash.Hex())
@@ -149,7 +153,7 @@ func processClaim(
 		return
 	}
 
-	suggestedPayout, err := agent.SuggestPayout(ctx, claimsagent.ClaimContext{
+	suggestion, err := agent.SuggestPayout(ctx, claimsagent.ClaimContext{
 		OrderID:            event.OrderID,
 		ProtectionAmount:   order.ProtectionAmount,
 		FailureDescription: "delivery not confirmed before the SLA deadline",
@@ -158,13 +162,20 @@ func processClaim(
 		logger.Error("failed to get AI payout suggestion", "error", err)
 		return
 	}
-	logger.Info("AI suggested payout", "suggestedPayoutWei", suggestedPayout.String())
+	logger.Info("AI suggested payout", "suggestedPayoutWei", suggestion.AmountWei.String(), "reasoning", suggestion.Reasoning)
+
+	// Best-effort: the dashboard showing the AI's reasoning is purely
+	// informational (see reasoningreporter's package doc) and must never
+	// hold up or fail claim submission itself.
+	if err := reasoningClient.Report(ctx, event.OrderID, suggestion.Reasoning, suggestion.AmountWei.String()); err != nil {
+		logger.Warn("failed to report AI reasoning to cmd/api", "error", err)
+	}
 
 	var tx *types.Transaction
 	if err := retryWithBackoff(ctx, logger, "submit claim", func() error {
 		submitted, err := chainClient.SubmitClaim(
 			ctx, sepoliaChainKey, event.BlockNumber, args.encodedTransaction, args.merkleRoot,
-			args.siblings, args.lowerEndpointDigest, args.continuityRoots, suggestedPayout,
+			args.siblings, args.lowerEndpointDigest, args.continuityRoots, suggestion.AmountWei,
 		)
 		if err != nil {
 			return err

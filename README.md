@@ -66,6 +66,7 @@ Full breakdown in [ARCHITECTURE.md](ARCHITECTURE.md). Specific Attestcoin Protoc
 │   └── decision.md
 ├── ARCHITECTURE.md
 ├── SECURITY.md
+├── docker-compose.yml     # runs backend (api + worker) and frontend together
 └── README.md
 ```
 
@@ -73,7 +74,18 @@ Full breakdown in [ARCHITECTURE.md](ARCHITECTURE.md). Specific Attestcoin Protoc
 
 > Documentation and planning phase complete. Implementation in progress — see [docs/SPRINTS.md](docs/SPRINTS.md) for the sprint-by-sprint development plan through the submission deadline (2026-09-13, 23:59 ET).
 
-## Running locally (reference — final commands will be confirmed during Sprint 1)
+## Running locally
+
+### Docker (one command)
+
+```bash
+cp .env.example .env   # fill in RPC URLs, contract addresses, worker key, LLM key
+docker compose up --build
+```
+
+Starts `cmd/api` (:8080), `cmd/worker`, and the frontend (:3000) together. Backend images are multi-stage builds on `distroless/static`; the frontend uses Next.js's standalone output — see `docker-compose.yml` and each service's `Dockerfile`.
+
+### Without Docker (per-service, for active development)
 
 ```bash
 # Contracts
@@ -85,7 +97,7 @@ forge test
 # Backend / worker
 cd backend
 go mod tidy
-go run ./cmd/worker
+go run ./cmd/worker   # or ./cmd/api
 
 # Frontend
 cd frontend
@@ -93,7 +105,7 @@ npm install
 npm run dev
 ```
 
-Testnet deployment addresses (Sepolia + Creditcoin CC3) will be published in `scripts/deployments.json` once the final deploy happens (Sprint 5).
+Testnet deployment addresses (Sepolia + Creditcoin CC3) are published in `scripts/deployments.json`.
 
 ## Networks used
 

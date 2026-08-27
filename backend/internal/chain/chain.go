@@ -82,6 +82,25 @@ func (c *Client) SubmitClaim(
 	return tx, nil
 }
 
+// RegisterOrder calls ClaimVault.registerOrder, signed by the worker's key.
+// ClaimVault restricts this to the authorized worker address (see
+// docs/THREAT_MODEL.md, T8) — it is the only gate on which
+// (orderId, buyer, protectionAmount) triples a later submitClaim will ever
+// honor a payout for.
+func (c *Client) RegisterOrder(ctx context.Context, orderID *big.Int, buyer common.Address, protectionAmount *big.Int) (*types.Transaction, error) {
+	opts, err := bind.NewKeyedTransactorWithChainID(c.signingKey, c.chainID)
+	if err != nil {
+		return nil, fmt.Errorf("chain: create transactor: %w", err)
+	}
+	opts.Context = ctx
+
+	tx, err := c.claimVault.RegisterOrder(opts, orderID, buyer, protectionAmount)
+	if err != nil {
+		return nil, fmt.Errorf("chain: register order %s: %w", orderID, err)
+	}
+	return tx, nil
+}
+
 // Order is a registered protection order read from ClaimVault.
 type Order struct {
 	Buyer            common.Address

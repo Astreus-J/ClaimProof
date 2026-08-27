@@ -70,6 +70,17 @@ Strict rules:
 - You must echo back the exact Order ID given to you, unchanged, as orderIdConfirmation — this is used to verify your response corresponds to the correct claim.
 - Respond with ONLY a single JSON object, no other text and no markdown code fences: {"orderIdConfirmation": <integer, exactly the Order ID given>, "suggestedPercentage": <integer 0-100>, "reasoning": "<one sentence>"}`
 
+// PayoutSuggestion is the claims agent's advisory output: an amount already
+// clamped to the policy cap, and the reasoning behind it — the LLM's own
+// one-sentence explanation when its response passed both anti-hallucination
+// layers, or a note explaining which layer discarded it otherwise. Nothing
+// upstream should skip logging or surfacing Reasoning; it's the only window
+// into what the AI actually said (see package doc for the two-layer guard).
+type PayoutSuggestion struct {
+	AmountWei *big.Int
+	Reasoning string
+}
+
 // SuggestPayout asks the LLM what fraction of the order's protectionAmount
 // to refund, and returns that fraction of protectionAmount, clamped to
 // policyCap. If the LLM's response can't be parsed or fails the order-ID
@@ -77,7 +88,7 @@ Strict rules:
 // parsing hiccup or hallucination must never itself deny a claim that
 // Attestcoin has already verified actually happened; the cap still bounds
 // the result either way.
-func (a *Agent) SuggestPayout(ctx context.Context, claim ClaimContext) (*big.Int, error) {
+func (a *Agent) SuggestPayout(ctx context.Context, claim ClaimContext) (*PayoutSuggestion, error) {
 	userPrompt := fmt.Sprintf("Order ID: %d\nFailure description: %s", claim.OrderID, claim.FailureDescription)
 
 	response, err := a.llm.Complete(ctx, systemPrompt, userPrompt)
@@ -85,24 +96,26 @@ func (a *Agent) SuggestPayout(ctx context.Context, claim ClaimContext) (*big.Int
 		return nil, fmt.Errorf("claimsagent: LLM completion: %w", err)
 	}
 
-	percentage := parseSuggestedPercentage(response, claim.OrderID)
+	percentage, reasoning := parseSuggestion(response, claim.OrderID)
 
 	suggested := new(big.Int).Mul(claim.ProtectionAmount, big.NewInt(percentage))
 	suggested.Div(suggested, big.NewInt(100))
 
 	if suggested.Cmp(a.policyCap) > 0 {
-		return new(big.Int).Set(a.policyCap), nil
+		suggested = new(big.Int).Set(a.policyCap)
 	}
-	return suggested, nil
+	return &PayoutSuggestion{AmountWei: suggested, Reasoning: reasoning}, nil
 }
 
-// parseSuggestedPercentage extracts a 0-100 percentage from the LLM's
-// response. It returns the safe default of 100 (full refund) if the
-// response isn't valid JSON, or if the echoed orderIdConfirmation doesn't
-// match expectedOrderID — the latter is treated as a hallucination/cross-talk
-// signal and the suggested percentage is discarded outright, not merely
-// distrusted-but-used.
-func parseSuggestedPercentage(response string, expectedOrderID uint64) int64 {
+// parseSuggestion extracts a 0-100 percentage and the accompanying reasoning
+// from the LLM's response. It returns the safe default of 100 (full refund)
+// if the response isn't valid JSON, or if the echoed orderIdConfirmation
+// doesn't match expectedOrderID — the latter is treated as a
+// hallucination/cross-talk signal and the suggested percentage is discarded
+// outright, not merely distrusted-but-used. Both fallback cases return a
+// synthetic reasoning string explaining why the LLM's own suggestion (if
+// any) was ignored, since there's nothing trustworthy to quote from it.
+func parseSuggestion(response string, expectedOrderID uint64) (percentage int64, reasoning string) {
 	const fullRefundFallback = 100
 
 	trimmed := strings.TrimSpace(response)
@@ -113,19 +126,19 @@ func parseSuggestedPercentage(response string, expectedOrderID uint64) int64 {
 
 	var parsed llmSuggestion
 	if err := json.Unmarshal([]byte(trimmed), &parsed); err != nil {
-		return fullRefundFallback
+		return fullRefundFallback, "the AI's response could not be parsed as JSON — discarding it and defaulting to a full refund"
 	}
 
 	if parsed.OrderIDConfirmation == nil || *parsed.OrderIDConfirmation != expectedOrderID {
-		return fullRefundFallback
+		return fullRefundFallback, "the AI's order-ID confirmation did not match this claim — discarding its suggestion and defaulting to a full refund"
 	}
 
 	switch {
 	case parsed.SuggestedPercentage < 0:
-		return 0
+		return 0, parsed.Reasoning
 	case parsed.SuggestedPercentage > 100:
-		return 100
+		return 100, parsed.Reasoning
 	default:
-		return parsed.SuggestedPercentage
+		return parsed.SuggestedPercentage, parsed.Reasoning
 	}
 }
