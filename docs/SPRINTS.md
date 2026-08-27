@@ -170,6 +170,8 @@ Someone outside the project can clone the repository and run the full flow follo
 - [ ] Export [WHITEPAPER.md](WHITEPAPER.md) + the architecture excerpt to PDF (the submission's deck/whitepaper)
 - [ ] Rehearse the 60-second pitch (see [execution.md](execution.md))
 
+**Partial progress — raw footage only, not the full recording task:** captured real screen recordings (Playwright driving the actual UI against live testnet, no simulated data) covering the script's "Live demo" segment (1:20–3:30): buy → live SLA countdown → simulate failure → dashboard reaching "Paid" with the AI's reasoning shown. See `demo/README.md`. This is raw material for the task, not the task itself — the hook/problem/solution narration, the Attestcoin/Creditcoin explanation, slides, voice, editing, and publishing are all still open and need a person, not automation. Video editing/publishing, the whitepaper PDF export, and pitch rehearsal weren't attempted this pass.
+
 ### Exit criterion
 
 The video is published and watchable end-to-end; the whitepaper/deck PDF is ready to attach.
