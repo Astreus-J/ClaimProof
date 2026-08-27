@@ -51,7 +51,7 @@ Full breakdown in [ARCHITECTURE.md](ARCHITECTURE.md). Specific Attestcoin Protoc
 ├── backend/               # Go worker (listener, proof builder, AI claims agent)
 ├── frontend/              # Next.js — storefront demo + claims dashboard
 ├── scripts/               # deployments.json (deployed addresses — data only)
-├── demo/                  # Demo video link/script
+├── demo/                  # Raw demo footage + notes (see demo/README.md)
 ├── docs/                  # Technical and product documentation
 │   ├── ATTESTCOIN_INTEGRATION.md
 │   ├── THREAT_MODEL.md
@@ -74,14 +74,14 @@ Full breakdown in [ARCHITECTURE.md](ARCHITECTURE.md). Specific Attestcoin Protoc
 
 > Contracts, backend, and frontend implemented and deployed to testnet; the full flow (purchase → delivery failure → Attestcoin proof → AI-suggested payout → on-chain payout) has been run successfully live, repeatedly. See [docs/SPRINTS.md](docs/SPRINTS.md) for the sprint-by-sprint development plan through the submission deadline (2026-09-13, 23:59 ET) and current progress.
 
-## Running locally
+## Running the app (Docker — backend + frontend)
 
-Both paths below need:
+The contracts are already deployed to testnet (see [`scripts/deployments.json`](scripts/deployments.json)) — running the app means running `cmd/api`, `cmd/worker`, and the frontend against those already-live contracts. Docker runs all three with one command; you don't need Go, Node, or Foundry installed to do this.
+
+You'll need:
 - A dedicated **testnet-only** wallet private key, funded with [Sepolia ETH](https://www.alchemy.com/faucets/ethereum-sepolia) and [Creditcoin CC3 testnet CTC](https://creditcoin.org/faucet/) — never a personal or mainnet key.
 - An API key for one supported LLM provider (Gemini, OpenAI, or Anthropic) for the AI claims agent.
 - The deployed contract addresses from [`scripts/deployments.json`](scripts/deployments.json) — the single source of truth for `DELIVERY_TRACKER_MOCK_ADDRESS` / `CLAIM_VAULT_ADDRESS` (Sepolia / Creditcoin sections respectively).
-
-### Docker (one command)
 
 ```bash
 cp .env.example .env
@@ -92,15 +92,13 @@ docker compose up --build
 
 Starts `cmd/api` (:8080), `cmd/worker`, and the frontend (:3000) together — open http://localhost:3000. Backend images are multi-stage builds on `distroless/static`; the frontend uses Next.js's standalone output — see `docker-compose.yml` and each service's `Dockerfile`.
 
-### Without Docker (per-service, for active development)
+Connect a wallet holding testnet CTC/ETH (or any address — only the backend key ever signs transactions) and buy protection. Full end-to-end timing note: after a delivery failure is reported, `cmd/worker` typically takes 5-10 minutes to reach a payout, waiting on Attestcoin's attestation — this is normal, not a hang (see [docs/ATTESTCOIN_INTEGRATION.md](docs/ATTESTCOIN_INTEGRATION.md)).
+
+### Per-service, without Docker (for active development on the app)
+
+Same env vars as above, split across each service's own `.env`/`.env.local`:
 
 ```bash
-# Contracts
-cd contracts
-forge install
-forge build
-forge test
-
 # Backend — both must run together for the full flow:
 # cmd/api registers new orders (the Store's buy button calls it);
 # cmd/worker watches for failures and drives them to payout.
@@ -117,7 +115,16 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000, connect a wallet holding the same testnet CTC/ETH used for the backend key (or any address — only the backend key ever signs transactions), and buy protection. Full end-to-end timing note: after a delivery failure is reported, `cmd/worker` typically takes 5-10 minutes to reach a payout, waiting on Attestcoin's attestation — this is normal, not a hang (see [docs/ATTESTCOIN_INTEGRATION.md](docs/ATTESTCOIN_INTEGRATION.md)).
+### Working with the contracts (Foundry)
+
+Only needed if you want to change, test, or redeploy the contracts themselves — not required to run the app against the already-deployed testnet contracts above.
+
+```bash
+cd contracts
+forge install
+forge build
+forge test
+```
 
 ## Networks used
 
