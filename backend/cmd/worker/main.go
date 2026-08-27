@@ -153,12 +153,16 @@ func processClaim(
 		return
 	}
 
-	suggestion, err := agent.SuggestPayout(ctx, claimsagent.ClaimContext{
-		OrderID:            event.OrderID,
-		ProtectionAmount:   order.ProtectionAmount,
-		FailureDescription: "delivery not confirmed before the SLA deadline",
-	})
-	if err != nil {
+	var suggestion *claimsagent.PayoutSuggestion
+	if err := retryWithBackoff(ctx, logger, "get AI payout suggestion", func() error {
+		var err error
+		suggestion, err = agent.SuggestPayout(ctx, claimsagent.ClaimContext{
+			OrderID:            event.OrderID,
+			ProtectionAmount:   order.ProtectionAmount,
+			FailureDescription: "delivery not confirmed before the SLA deadline",
+		})
+		return err
+	}); err != nil {
 		logger.Error("failed to get AI payout suggestion", "error", err)
 		return
 	}
