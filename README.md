@@ -139,7 +139,7 @@ forge test
 - [SECURITY.md](SECURITY.md) — security posture and known limitations
 - [docs/ATTESTCOIN_INTEGRATION.md](docs/ATTESTCOIN_INTEGRATION.md) — detailed Attestcoin Protocol usage
 - [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) — threat model
-- [docs/WHITEPAPER.md](docs/WHITEPAPER.md) — product whitepaper
+- [docs/WHITEPAPER.md](docs/WHITEPAPER.md) — product whitepaper ([PDF export](docs/ClaimProof-Whitepaper.pdf))
 - [docs/SPRINTS.md](docs/SPRINTS.md) — sprint-by-sprint development plan
 
 ## Team
