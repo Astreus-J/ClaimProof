@@ -149,7 +149,7 @@ func processClaim(
 		return
 	}
 
-	suggestedPayout, err := agent.SuggestPayout(ctx, claimsagent.ClaimContext{
+	suggestion, err := agent.SuggestPayout(ctx, claimsagent.ClaimContext{
 		OrderID:            event.OrderID,
 		ProtectionAmount:   order.ProtectionAmount,
 		FailureDescription: "delivery not confirmed before the SLA deadline",
@@ -158,13 +158,13 @@ func processClaim(
 		logger.Error("failed to get AI payout suggestion", "error", err)
 		return
 	}
-	logger.Info("AI suggested payout", "suggestedPayoutWei", suggestedPayout.String())
+	logger.Info("AI suggested payout", "suggestedPayoutWei", suggestion.AmountWei.String(), "reasoning", suggestion.Reasoning)
 
 	var tx *types.Transaction
 	if err := retryWithBackoff(ctx, logger, "submit claim", func() error {
 		submitted, err := chainClient.SubmitClaim(
 			ctx, sepoliaChainKey, event.BlockNumber, args.encodedTransaction, args.merkleRoot,
-			args.siblings, args.lowerEndpointDigest, args.continuityRoots, suggestedPayout,
+			args.siblings, args.lowerEndpointDigest, args.continuityRoots, suggestion.AmountWei,
 		)
 		if err != nil {
 			return err
