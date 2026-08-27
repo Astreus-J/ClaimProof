@@ -481,4 +481,173 @@ contract ClaimVaultTest is AttestcoinFixtures {
             PROTECTION_AMOUNT
         );
     }
+
+    // ---------- Sprint 6: fuzz tests (payout formula & pool balance boundaries) ----------
+
+    /// @notice The payout formula is `min(suggestedPayout, protectionAmount, payoutCap)` —
+    ///         asserted here as two independent properties rather than by reimplementing
+    ///         the contract's own ternary chain: (1) the payout never exceeds any of the
+    ///         three bounds, and (2) it's tight — equal to at least one of them, not some
+    ///         arbitrarily smaller value a bug could produce while still satisfying (1).
+    function testFuzz_SubmitClaim_PayoutIsExactlyTheMinOfSuggestionProtectionAndCap(
+        uint256 protectionAmount,
+        uint256 payoutCap,
+        uint256 suggestedPayout
+    ) public {
+        protectionAmount = bound(protectionAmount, 0, 1_000_000 ether);
+        payoutCap = bound(payoutCap, 0, 1_000_000 ether);
+        // suggestedPayout is left at its full uint256 range on purpose — the AI's
+        // suggestion is untrusted input (see docs/THREAT_MODEL.md T4/T10) and the
+        // formula must hold even at the extremes (0, type(uint256).max).
+
+        vm.deal(address(vault), 1_000_000 ether); // pool balance isn't what this test probes
+        vault.setPayoutCap(payoutCap);
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, protectionAmount);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        (, uint256 payoutAmount) = vault.submitClaim(
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            suggestedPayout
+        );
+
+        assertLe(payoutAmount, suggestedPayout, "payout must never exceed the AI's suggestion");
+        assertLe(payoutAmount, protectionAmount, "payout must never exceed the registered protection amount");
+        assertLe(payoutAmount, payoutCap, "payout must never exceed the policy cap");
+        assertTrue(
+            payoutAmount == suggestedPayout || payoutAmount == protectionAmount || payoutAmount == payoutCap,
+            "payout must be tight: equal to whichever bound is actually binding"
+        );
+    }
+
+    /// @notice If the pool can't cover the payout, submitClaim must revert (never send a
+    ///         partial amount) and leave the order unclaimed, so a later top-up lets the
+    ///         same proof be resubmitted successfully — the exact scenario hit live during
+    ///         Sprint 5's integration testing tonight (an underfunded pool from prior
+    ///         payouts), confirmed here as a permanent regression test.
+    function testFuzz_SubmitClaim_RevertsWithoutStateChangeWhenPoolBalanceInsufficient(
+        uint256 poolBalance,
+        uint256 protectionAmount
+    ) public {
+        protectionAmount = bound(protectionAmount, 1, 1_000_000 ether); // 0 never underfunds
+        poolBalance = bound(poolBalance, 0, protectionAmount - 1); // strictly insufficient
+
+        vm.deal(address(vault), poolBalance);
+        vault.setPayoutCap(protectionAmount); // cap isn't the binding constraint here
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, protectionAmount);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        vm.expectRevert(ClaimVault.PayoutTransferFailed.selector);
+        vault.submitClaim(
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            protectionAmount
+        );
+
+        (,, bool claimed) = vault.orders(ORDER_ID);
+        assertFalse(claimed, "a reverted payout must not mark the order claimed - it must stay resubmittable");
+        assertEq(vault.poolBalance(), poolBalance, "a reverted payout must not move any funds");
+    }
+
+    /// @notice A zero payout cap is a valid (if drastic) policy setting — e.g. an owner
+    ///         pausing payouts without disabling claim submission entirely. submitClaim
+    ///         must still run to completion (mark the order claimed, emit ClaimPaid) with
+    ///         a zero amount, not revert or silently skip the claim.
+    function test_SubmitClaim_ZeroPayoutCap_PaysNothingButMarksClaimed() public {
+        vault.setPayoutCap(0);
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, PROTECTION_AMOUNT);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        uint256 buyerBalanceBefore = buyer.balance;
+
+        (, uint256 payoutAmount) = vault.submitClaim(
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
+        );
+
+        assertEq(payoutAmount, 0);
+        assertEq(buyer.balance, buyerBalanceBefore);
+        (,, bool claimed) = vault.orders(ORDER_ID);
+        assertTrue(claimed, "the order is consumed even though nothing was paid - it cannot be resubmitted later");
+    }
+
+    /// @notice Symmetric to the zero-cap case: the AI suggesting 0% (e.g. a
+    ///         parseable-but-fully-discounted response) must also complete normally with
+    ///         a zero payout, not revert.
+    function test_SubmitClaim_ZeroSuggestedPayout_PaysNothingButMarksClaimed() public {
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, PROTECTION_AMOUNT);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        (, uint256 payoutAmount) = vault.submitClaim(
+            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots, 0
+        );
+
+        assertEq(payoutAmount, 0);
+        (,, bool claimed) = vault.orders(ORDER_ID);
+        assertTrue(claimed);
+    }
 }
