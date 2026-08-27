@@ -1,0 +1,11 @@
+{
+  "sepolia": {
+    "chainId": 11155111,
+    "DeliveryTrackerMock": "0x5c293e0C72E52fAca66befbEd2a65552431Ce46d"
+  },
+  "creditcoinTestnet": {
+    "chainId": 102031,
+    "ClaimVault": "0xd6f0680F366d2de5849ab00Ff2Ca48aa1D030bCd",
+    "EvmV1Decoder": "0xE671304e9d91b7df3a5D9019Ea58E6fC33EB4bb3"
+  }
+}

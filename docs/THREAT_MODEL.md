@@ -37,8 +37,8 @@
 
 ### T4 — AI suggests a manipulated or excessive value
 **Attack:** the AI Claims Agent (compromised, prompt-injected, or simply buggy) suggests a payout far above what's reasonable.
-**Mitigation:** the contract enforces an on-chain policy cap (a maximum percentage of the original order value, set during `registerOrder`), independent of the AI's suggestion. The AI never has signing authority.
-**Status:** mitigated by design — validated by an automated test covering out-of-cap values.
+**Mitigation:** two independent layers. Off-chain, `internal/claimsagent.Agent.SuggestPayout` clamps the LLM's suggested percentage to [0, 100] and the resulting amount to a configured policy cap before ever building a transaction. On-chain, `ClaimVault.submitClaim`'s `suggestedPayout` parameter is bounded by `min(suggestedPayout, protectionAmount, payoutCap)` regardless of what either layer above computed — the AI never has signing authority, and a compromised worker relaying an inflated `suggestedPayout` still cannot exceed the registered order's own protection amount or the on-chain cap.
+**Status:** mitigated by design — validated by automated tests at both layers (`claimsagent` tests for the off-chain cap; `ClaimVault.t.sol`'s `test_SubmitClaim_SuggestedValueAbovePolicyCap_IsCappedNotHonored` for the on-chain cap) and by a real end-to-end run where the Gemini-backed claims agent suggested a genuine payout, submitted automatically by the worker with no manual step.
 
 ### T5 — Compromise of the worker's private key
 **Attack:** an attacker obtains the private key the worker uses to submit claims.
@@ -55,6 +55,23 @@
 **Mitigation:** outside ClaimProof's control; documented for transparency with judges. ClaimProof inherits exactly the security level the protocol offers today, without adding optimistic assumptions about guarantees that don't exist yet.
 **Status:** disclosed platform risk.
 
+### T8 — Self-registering an order to drain the pool with a genuine, self-triggered event
+**Attack:** `DeliveryTrackerMock.createShipment` and `reportDeliveryFailure` are permissionless by design (see T6). If `ClaimVault.registerOrder` were also unrestricted, an attacker could register an order with themselves as `buyer` and an arbitrary `protectionAmount`, then create and fail their own shipment on Sepolia — a real, honestly-attestable `DeliveryFailed` event — and call `submitClaim` to drain the pool for the cost of gas, repeatable per `orderId`.
+**Mitigation:** `registerOrder` is restricted to the authorized `worker` address (`onlyWorker`) — it is the only gate on which `(orderId, buyer, protectionAmount)` triples `submitClaim` will ever honor a payout for, independent of how easy it is to trigger the on-chain event itself.
+**Status:** mitigated — covered by an automated test (`ClaimVault.t.sol`, `test_RegisterOrder_RevertsIfCallerIsNotWorker`). Found during Sprint 2's `entry-point-analyzer` pass, not present in the original Sprint 1 skeleton's design intent (the NatSpec comment predated the actual restriction).
+
+### T9 — Fake `DeliveryFailed` event from an untrusted Sepolia contract
+**Attack:** the Attestcoin precompile proves that a decoded log's *content* (topics/data) was genuinely included and attested — it does not know or care which contract emitted it. Without an extra check, any attacker-deployed Sepolia contract could emit an event with the exact same signature and topics as `DeliveryTrackerMock.DeliveryFailed`, get it attested (it's a real, honest transaction), and pass it off as a legitimate trigger for any registered `orderId`.
+**Mitigation:** `ClaimVault` stores `DeliveryTrackerMock`'s address as an immutable `sourceContract` set at deployment, and `submitClaim` only accepts a `DeliveryFailed` log whose emitter address (`log.address_`) matches it exactly — logs from any other contract are ignored even if the signature and topics match.
+**Status:** mitigated by design — covered by an automated test (`test_SubmitClaim_RevertsOnEventFromUntrustedContract`).
+
+### T10 — AI claims agent hallucinating or inventing data
+**Attack:** an LLM can fabricate plausible-sounding details, answer about the wrong claim (cross-talk), or invent facts not present in its input — independent of whether its numeric suggestion happens to be reasonable. `internal/claimsagent.Agent.SuggestPayout` mitigates this with two independent layers, neither of which relies on trusting the model's own text:
+1. **Grounding at generation time** — a system prompt (Gemini's `systemInstruction`, kept separate from the per-claim user prompt) explicitly forbids inventing or assuming facts not given, and the LLM is never told the claim's real monetary value in the first place — it only ever judges severity as a 0-100 percentage, narrowing what it could hallucinate about the payout amount to begin with. `generationConfig.responseMimeType: "application/json"` additionally constrains the output format itself.
+2. **Verification after generation** — the LLM must echo back the exact order ID it was given as `orderIdConfirmation`. If that echo doesn't match the order actually being processed, the response is treated as a hallucination/cross-talk signal and the suggested percentage is discarded outright (not merely distrusted-but-used) in favor of the same safe full-refund fallback used for unparsable responses.
+Whatever percentage survives both layers is still bounded by the off-chain `policyCap` and, independently, by `ClaimVault`'s on-chain `payoutCap` (see T4) — a hallucinated suggestion can be wrong, but it cannot authorize an out-of-bounds payout on its own.
+**Status:** mitigated by design — covered by automated tests (`TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMismatches`, `TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMissing`, `TestSuggestPayout_NeverExposesTheMonetaryAmountToTheLLM`) and verified against the real Gemini API, which correctly echoed the given order ID and produced valid, unfenced JSON.
+
 ## Negative test cases covered (Foundry)
 
 - Submitting a claim with an invalid proof → revert
@@ -62,3 +79,7 @@
 - Submitting a claim for a source transaction with a failure status (`!= 0x1`) → revert
 - Submitting a suggested value above the policy cap → the value is capped, not honored as-is
 - Submitting a claim for a nonexistent `orderId` → revert
+- Registering an order as anyone other than the authorized worker → revert
+- Submitting a claim whose event's buyer doesn't match the registered order's buyer → revert
+- Submitting a claim whose `DeliveryFailed` log was emitted by a contract other than the trusted `sourceContract` → revert
+- Submitting a claim for an order that was already paid out → revert

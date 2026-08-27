@@ -14,16 +14,16 @@ References: [product.md](product.md) (vision) · [architecture.md](architecture.
 
 ### Tasks
 
-- [ ] Create a public GitHub repository with the folder structure defined in the README
-- [ ] Configure Foundry (`forge init`, `foundry.toml` pointing to Creditcoin CC3 Testnet and Ethereum Sepolia via RPC)
-- [ ] Get testnet CTC from the faucet and configure a deploy wallet (separate from any personal wallet)
-- [ ] Run the official `@gluwa/usc-sdk` "Hello Bridge" tutorial (`gluwa/attestcoin-protocol-examples`) once, in a scratch directory outside the repo, purely as a reference to confirm the Prover API's request/response shape and testnet setup — it is **not** a project dependency, since the backend is Go
-- [ ] Initialize the Go module (`go mod init github.com/<org>/claimproof/backend` or equivalent), create `cmd/worker/main.go` and the `internal/{listener,proofbuilder,claimsagent,chain}/` package skeletons, add `go-ethereum` as a dependency
-- [ ] Write the `DeliveryTrackerMock.sol` skeleton (Sepolia): shipment struct, `createShipment` function, `DeliveryFailed` event
-- [ ] Write the `ClaimVault.sol` skeleton (Creditcoin): `registerOrder`, pool structure, basic access guard
-- [ ] Deploy both skeletons to testnet via `contracts/script/Deploy.s.sol`
-- [ ] Create `scripts/deployments.json` with the deployed addresses
-- [ ] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain`
+- [x] Create a public GitHub repository with the folder structure defined in the README
+- [x] Configure Foundry (`forge init`, `foundry.toml` pointing to Creditcoin CC3 Testnet and Ethereum Sepolia via RPC)
+- [x] Get testnet CTC from the faucet and configure a deploy wallet (separate from any personal wallet)
+- [x] Run the official `@gluwa/usc-sdk` "Hello Bridge" tutorial (`gluwa/attestcoin-protocol-examples`) once, in a scratch directory outside the repo, purely as a reference to confirm the Prover API's request/response shape and testnet setup — it is **not** a project dependency, since the backend is Go. Ran end-to-end against live testnet (burn on Sepolia → attested → proof generated → minted on Creditcoin), confirming the full pipeline works; the confirmed Prover API schema is recorded in [ATTESTCOIN_INTEGRATION.md](ATTESTCOIN_INTEGRATION.md).
+- [x] Initialize the Go module (`go mod init github.com/<org>/claimproof/backend` or equivalent), create `cmd/worker/main.go` and the `internal/{listener,proofbuilder,claimsagent,chain}/` package skeletons, add `go-ethereum` as a dependency
+- [x] Write the `DeliveryTrackerMock.sol` skeleton (Sepolia): shipment struct, `createShipment` function, `DeliveryFailed` event
+- [x] Write the `ClaimVault.sol` skeleton (Creditcoin): `registerOrder`, pool structure, basic access guard
+- [x] Deploy both skeletons to testnet via `contracts/script/` (`DeployDeliveryTrackerMock.s.sol` on Sepolia via `forge script`; `DeployClaimVault.s.sol` on Creditcoin CC3 via `forge create`, since Creditcoin's RPC omits `mixHash` and breaks `forge script`'s local simulation — documented in the script file)
+- [x] Create `scripts/deployments.json` with the deployed addresses
+- [x] Generate Go contract bindings for both skeletons with `abigen` into `backend/internal/chain` — required installing a separate stable Go 1.24.6 toolchain alongside the system's non-standard 1.27 build to get `abigen`/`golangci-lint` working; bindings generated from the compiled ABI/bytecode in `contracts/out/`
 
 ### Exit criterion
 
@@ -39,17 +39,19 @@ Both skeleton contracts are deployed on testnet, the official SDK tutorial runs 
 
 ### Tasks
 
-- [ ] Implement the call to `INativeQueryVerifier.verifyAndEmit()` on the `0x0FD2` precompile inside `ClaimVault.submitClaim(...)`
-- [ ] Integrate `EvmV1Decoder` to extract `orderId`, `buyer`, `timestamp`, and the status field from the decoded transaction
-- [ ] Implement an explicit check of the `0x1` status (the precompile only proves inclusion, not success — a documented protocol gotcha)
-- [ ] Implement the `processedQueries` mapping for anti-replay protection
-- [ ] Write `ClaimVault.t.sol`: successful verification, invalid proof rejected, nonexistent orderId rejected
-- [ ] Write `ReplayProtection.t.sol`: resubmitting the same proof is rejected
-- [ ] Manually test end-to-end on testnet: emit a real `DeliveryFailed` on Sepolia → generate the proof via `ProofBuilder` → submit it to `ClaimVault` → confirm the payout
+- [x] Implement the call to `INativeQueryVerifier.verifyAndEmit()` on the `0x0FD2` precompile inside `ClaimVault.submitClaim(...)`
+- [x] Integrate `EvmV1Decoder` to extract `orderId`, `buyer`, `timestamp`, and the status field from the decoded transaction
+- [x] Implement an explicit check of the `0x1` status (the precompile only proves inclusion, not success — a documented protocol gotcha)
+- [x] Implement the `processedQueries` mapping for anti-replay protection
+- [x] Write `ClaimVault.t.sol`: successful verification, invalid proof rejected, nonexistent orderId rejected
+- [x] Write `ReplayProtection.t.sol`: resubmitting the same proof is rejected
+- [x] Manually test end-to-end on testnet: emit a real `DeliveryFailed` on Sepolia → generate the proof via `ProofBuilder` → submit it to `ClaimVault` → confirm the payout
 
 ### Exit criterion
 
 A real event emitted on Sepolia is verified and results in a correct payout on `ClaimVault` on Creditcoin, with no mocked part in the verification. Negative tests (T1–T3 from [THREAT_MODEL.md](THREAT_MODEL.md)) pass.
+
+**Verified 2026-08-26:** order 42 registered on `ClaimVault` (`0xE05C7771921368e3d433accCa93e9E185acb12D3`), a real `DeliveryFailed` emitted on `DeliveryTrackerMock` (Sepolia tx `0x7033d1940b59e974c4c73900cf4503642069c2d4157ec1b681215d2a2a817908`), proof fetched from the live Prover API after attestation, submitted via `submitClaim` — payout landed for the exact registered `protectionAmount`, `orders[42].claimed == true`, pool balance decreased accordingly. All 32 Foundry tests pass, including T1/T2/T3 and two additional threats found during this sprint's `entry-point-analyzer`/`guidelines-advisor` pass (T8: `registerOrder` was missing its intended `onlyWorker` gate; T9: a `DeliveryFailed` log's emitter address wasn't checked against the trusted `DeliveryTrackerMock`) — both fixed and documented in [THREAT_MODEL.md](THREAT_MODEL.md).
 
 ---
 
@@ -61,17 +63,19 @@ A real event emitted on Sepolia is verified and results in a correct payout on `
 
 ### Tasks
 
-- [ ] Implement `internal/listener` — listens for `DeliveryFailed` via Sepolia's WSS RPC using `go-ethereum`'s `ethclient`, publishes events on a Go channel
-- [ ] Implement `internal/proofbuilder` — hand-written HTTP client wrapping `WaitUntilHeightAttested()` + `GetProof()` against the Attestcoin Prover REST API
-- [ ] Implement `internal/claimsagent` — LLM call with order context, returns a suggested value within a configurable policy (LLM client behind an interface, so it can be mocked in tests)
-- [ ] Implement `internal/chain` — automatic submission to `ClaimVault` (`submitClaim`), signed by the worker's wallet, using the `abigen`-generated binding
-- [ ] Wire everything in `cmd/worker/main.go`: read config from environment variables, construct each component via its constructor, run the listener loop, handle SIGINT/SIGTERM for graceful shutdown
-- [ ] Add structured logging (`log/slog`) and retry-with-backoff on RPC/HTTP failure
-- [ ] Run the worker end-to-end locally against testnet, with no manual step between the failure and the payout
+- [x] Implement `internal/listener` — listens for `DeliveryFailed` via Sepolia's WSS RPC using `go-ethereum`'s `ethclient`, publishes events on a Go channel
+- [x] Implement `internal/proofbuilder` — hand-written HTTP client wrapping `WaitUntilHeightAttested()` + `GetProof()` against the Attestcoin Prover REST API
+- [x] Implement `internal/claimsagent` — LLM call (Gemini) with order context, returns a suggested value within a configurable policy (LLM client behind an interface, so it can be mocked in tests)
+- [x] Implement `internal/chain` — automatic submission to `ClaimVault` (`submitClaim`), signed by the worker's wallet, using the `abigen`-generated binding
+- [x] Wire everything in `cmd/worker/main.go`: read config from environment variables, construct each component via its constructor, run the listener loop, handle SIGINT/SIGTERM for graceful shutdown
+- [x] Add structured logging (`log/slog`) and retry-with-backoff on RPC/HTTP failure
+- [x] Run the worker end-to-end locally against testnet, with no manual step between the failure and the payout
 
 ### Exit criterion
 
 When a delivery failure is simulated, the worker detects, proves, consults the AI, and submits the claim automatically — with no intermediate manual command.
+
+**Verified 2026-08-26:** `ClaimVault.submitClaim` was extended with a `suggestedPayout` parameter (`payoutAmount = min(suggestedPayout, protectionAmount, payoutCap)`) so the AI's suggestion genuinely affects the payout, not just informationally — redeployed to `0xd6f0680F366d2de5849ab00Ff2Ca48aa1D030bCd`. Order 43 registered, shipment created on Sepolia with a short SLA; the running worker binary detected the resulting `DeliveryFailed` event on its own live WSS subscription, waited for attestation, fetched the proof, asked the real Gemini API for a suggested payout (it suggested a full refund, correctly reflecting the failure description), submitted `submitClaim`, and confirmed the mined transaction — end to end, with zero manual commands after the SLA breach. Graceful shutdown on SIGTERM was also confirmed live (`"shutdown signal received, waiting for in-flight claims to finish"` → clean exit).
 
 ---
 
@@ -83,16 +87,20 @@ When a delivery failure is simulated, the worker detects, proves, consults the A
 
 ### Tasks
 
-- [ ] Set up Next.js + wagmi/ethers + WalletConnect
-- [ ] "Store" screen: mock product + protection checkbox + buy button (calls `registerOrder` + `createShipment`)
-- [ ] "Dashboard" screen: the connected user's orders with live status (`Active → Failure detected → Verifying proof → Paid`)
-- [ ] Delivery-failure simulation button (calls the test function on `DeliveryTrackerMock`) — used when recording the demo
-- [ ] Subscribe to on-chain events so status updates without a manual reload
-- [ ] Handle loading and error states explicitly (no broken screen during the live demo)
+- [x] Set up Next.js + wagmi/ethers + WalletConnect
+- [x] "Store" screen: mock product + protection checkbox + buy button (calls `registerOrder` + `createShipment`)
+- [x] "Dashboard" screen: the connected user's orders with live status (`Active → Failure detected → Verifying proof → Paid`)
+- [x] Delivery-failure simulation button (calls the test function on `DeliveryTrackerMock`) — used when recording the demo
+- [x] Subscribe to on-chain events so status updates without a manual reload
+- [x] Handle loading and error states explicitly (no broken screen during the live demo)
+
+Buyer-facing wallet writes to `registerOrder`/`createShipment` were `onlyWorker`-gated as of Sprint 2's T8 fix, so a new `cmd/api` service (the "Store" operator, per `docs/architecture.md`'s sequence diagram) was added to `backend/` to sign those two calls on the buyer's behalf; the buyer's wallet only identifies the payout address.
 
 ### Exit criterion
 
 Without touching code or the console, it's possible to buy protection, simulate the failure, and watch the status change to "Paid" live in the interface.
+
+**Verified so far:** the buy flow end-to-end against live testnet (real `CreateShipment` + `RegisterOrder` transactions, confirmed on both chains, dashboard reflects the new order immediately); the buy-flow error state (API unreachable); the dashboard's live status reads against already-existing real orders in every state the badge supports (`Active`, `Paid`); the simulate-failure button's SLA-gating logic (correctly disabled/enabled against real on-chain deadlines). **Not yet verified:** watching a status live-transition through `Failure detected → Verifying proof → Paid` end-to-end, which additionally requires the Sprint 3 worker (listener + Attestcoin prover + claims agent) running alongside the frontend — this is exactly what Sprint 5's "five consecutive full-flow runs" exit criterion covers, so it's deferred there rather than re-tested piecemeal here.
 
 ---
 
