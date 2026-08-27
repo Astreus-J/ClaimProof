@@ -57,7 +57,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 
 	pb := proofbuilder.New(cfg.attestcoinProverURL, sepoliaChainKey, nil, 0)
 
-	llm := claimsagent.NewGeminiClient(cfg.llmAPIKey, "", nil)
+	llm, err := claimsagent.NewLLMClient(cfg.llmProvider, cfg.llmAPIKey, cfg.llmModel, nil)
+	if err != nil {
+		return fmt.Errorf("create LLM client: %w", err)
+	}
 	agent := claimsagent.New(llm, cfg.policyCapWei)
 
 	chainClient, err := chain.New(ctx, cfg.creditcoinRPCURL, cfg.workerPrivateKey, big.NewInt(chain.CreditcoinTestnetChainID), cfg.claimVaultAddress)

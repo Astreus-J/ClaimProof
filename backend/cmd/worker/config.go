@@ -20,7 +20,9 @@ type config struct {
 	claimVaultAddress      common.Address
 	attestcoinProverURL    string
 	workerPrivateKey       *ecdsa.PrivateKey
+	llmProvider            string
 	llmAPIKey              string
+	llmModel               string
 	policyCapWei           *big.Int
 }
 
@@ -59,10 +61,19 @@ func loadConfig() (*config, error) {
 		return nil, fmt.Errorf("parse WORKER_PRIVATE_KEY: %w", err)
 	}
 
+	llmProvider, err := requireEnv("LLM_PROVIDER")
+	if err != nil {
+		return nil, err
+	}
+
 	llmAPIKey, err := requireEnv("LLM_API_KEY")
 	if err != nil {
 		return nil, err
 	}
+
+	// LLM_MODEL is optional — an empty value falls back to that provider's
+	// own default model.
+	llmModel := os.Getenv("LLM_MODEL")
 
 	policyCapWeiStr, err := requireEnv("POLICY_CAP_WEI")
 	if err != nil {
@@ -80,7 +91,9 @@ func loadConfig() (*config, error) {
 		claimVaultAddress:      claimVaultAddress,
 		attestcoinProverURL:    attestcoinProverURL,
 		workerPrivateKey:       workerPrivateKey,
+		llmProvider:            llmProvider,
 		llmAPIKey:              llmAPIKey,
+		llmModel:               llmModel,
 		policyCapWei:           policyCapWei,
 	}, nil
 }
