@@ -10,3 +10,6 @@ backend/bin/
 
 # OS / editor junk
 .DS_Store
+
+# Raw, unedited demo footage — large binaries, not the final submitted asset
+demo/raw-footage/
