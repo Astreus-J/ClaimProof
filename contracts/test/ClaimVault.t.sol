@@ -184,7 +184,14 @@ contract ClaimVaultTest is AttestcoinFixtures {
         uint256 buyerBalanceBefore = buyer.balance;
 
         (uint256 orderId, uint256 payoutAmount) = vault.submitClaim(
-            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
         );
 
         assertEq(orderId, ORDER_ID);
@@ -214,7 +221,86 @@ contract ClaimVaultTest is AttestcoinFixtures {
         _mockVerifyAndEmit(true);
 
         (, uint256 payoutAmount) = vault.submitClaim(
-            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
+        );
+
+        assertEq(payoutAmount, 0.01 ether);
+    }
+
+    function test_SubmitClaim_PaysExactlySuggestedValueWhenBelowProtectionAndCap() public {
+        // The AI claims agent may suggest a partial refund (e.g. a minor SLA breach) —
+        // the contract must honor a suggestion strictly below both the registered
+        // protectionAmount and the policy cap, not silently pay the maximum instead.
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, PROTECTION_AMOUNT);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        uint256 suggestedPayout = PROTECTION_AMOUNT / 4;
+
+        (, uint256 payoutAmount) = vault.submitClaim(
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            suggestedPayout
+        );
+
+        assertEq(payoutAmount, suggestedPayout);
+    }
+
+    function test_SubmitClaim_SuggestedValueAbovePolicyCap_IsCappedNotHonored() public {
+        // T4 (docs/THREAT_MODEL.md): a compromised or buggy AI claims agent suggesting
+        // an excessive value must never result in a payout above the on-chain cap.
+        vault.setPayoutCap(0.01 ether);
+        vm.prank(worker);
+        vault.registerOrder(ORDER_ID, buyer, PROTECTION_AMOUNT);
+
+        (
+            uint64 chainKey,
+            uint64 blockHeight,
+            bytes memory encodedTransaction,
+            bytes32 merkleRoot,
+            INativeQueryVerifier.MerkleProofEntry[] memory siblings,
+            bytes32 lowerEndpointDigest,
+            bytes32[] memory continuityRoots
+        ) = _validProofArgs();
+
+        _mockCalculateTxIndex(TX_INDEX);
+        _mockVerifyAndEmit(true);
+
+        uint256 excessiveSuggestedPayout = 1000 ether;
+
+        (, uint256 payoutAmount) = vault.submitClaim(
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            excessiveSuggestedPayout
         );
 
         assertEq(payoutAmount, 0.01 ether);
@@ -239,7 +325,14 @@ contract ClaimVaultTest is AttestcoinFixtures {
 
         vm.expectRevert(ClaimVault.InvalidProof.selector);
         vault.submitClaim(
-            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
         );
     }
 
@@ -260,7 +353,14 @@ contract ClaimVaultTest is AttestcoinFixtures {
 
         vm.expectRevert(abi.encodeWithSelector(ClaimVault.OrderNotFound.selector, ORDER_ID));
         vault.submitClaim(
-            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
         );
     }
 
@@ -283,7 +383,8 @@ contract ClaimVaultTest is AttestcoinFixtures {
             bytes32(uint256(0xabc)),
             new INativeQueryVerifier.MerkleProofEntry[](0),
             bytes32(uint256(0xdef)),
-            new bytes32[](0)
+            new bytes32[](0),
+            PROTECTION_AMOUNT
         );
     }
 
@@ -307,7 +408,8 @@ contract ClaimVaultTest is AttestcoinFixtures {
             bytes32(uint256(0xabc)),
             new INativeQueryVerifier.MerkleProofEntry[](0),
             bytes32(uint256(0xdef)),
-            new bytes32[](0)
+            new bytes32[](0),
+            PROTECTION_AMOUNT
         );
     }
 
@@ -331,7 +433,8 @@ contract ClaimVaultTest is AttestcoinFixtures {
             bytes32(uint256(0xabc)),
             new INativeQueryVerifier.MerkleProofEntry[](0),
             bytes32(uint256(0xdef)),
-            new bytes32[](0)
+            new bytes32[](0),
+            PROTECTION_AMOUNT
         );
     }
 
@@ -353,7 +456,14 @@ contract ClaimVaultTest is AttestcoinFixtures {
         _mockVerifyAndEmit(true);
 
         vault.submitClaim(
-            chainKey, blockHeight, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
         );
 
         // A second, differently-keyed proof (different height) for the same order.
@@ -361,7 +471,14 @@ contract ClaimVaultTest is AttestcoinFixtures {
 
         vm.expectRevert(abi.encodeWithSelector(ClaimVault.OrderAlreadyClaimed.selector, ORDER_ID));
         vault.submitClaim(
-            chainKey, blockHeight + 1, encodedTransaction, merkleRoot, siblings, lowerEndpointDigest, continuityRoots
+            chainKey,
+            blockHeight + 1,
+            encodedTransaction,
+            merkleRoot,
+            siblings,
+            lowerEndpointDigest,
+            continuityRoots,
+            PROTECTION_AMOUNT
         );
     }
 }

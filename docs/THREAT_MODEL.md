@@ -37,8 +37,8 @@
 
 ### T4 — AI suggests a manipulated or excessive value
 **Attack:** the AI Claims Agent (compromised, prompt-injected, or simply buggy) suggests a payout far above what's reasonable.
-**Mitigation:** the contract enforces an on-chain policy cap (a maximum percentage of the original order value, set during `registerOrder`), independent of the AI's suggestion. The AI never has signing authority.
-**Status:** mitigated by design — validated by an automated test covering out-of-cap values.
+**Mitigation:** two independent layers. Off-chain, `internal/claimsagent.Agent.SuggestPayout` clamps the LLM's suggested percentage to [0, 100] and the resulting amount to a configured policy cap before ever building a transaction. On-chain, `ClaimVault.submitClaim`'s `suggestedPayout` parameter is bounded by `min(suggestedPayout, protectionAmount, payoutCap)` regardless of what either layer above computed — the AI never has signing authority, and a compromised worker relaying an inflated `suggestedPayout` still cannot exceed the registered order's own protection amount or the on-chain cap.
+**Status:** mitigated by design — validated by automated tests at both layers (`claimsagent` tests for the off-chain cap; `ClaimVault.t.sol`'s `test_SubmitClaim_SuggestedValueAbovePolicyCap_IsCappedNotHonored` for the on-chain cap) and by a real end-to-end run where the Gemini-backed claims agent suggested a genuine payout, submitted automatically by the worker with no manual step.
 
 ### T5 — Compromise of the worker's private key
 **Attack:** an attacker obtains the private key the worker uses to submit claims.
@@ -64,6 +64,13 @@
 **Attack:** the Attestcoin precompile proves that a decoded log's *content* (topics/data) was genuinely included and attested — it does not know or care which contract emitted it. Without an extra check, any attacker-deployed Sepolia contract could emit an event with the exact same signature and topics as `DeliveryTrackerMock.DeliveryFailed`, get it attested (it's a real, honest transaction), and pass it off as a legitimate trigger for any registered `orderId`.
 **Mitigation:** `ClaimVault` stores `DeliveryTrackerMock`'s address as an immutable `sourceContract` set at deployment, and `submitClaim` only accepts a `DeliveryFailed` log whose emitter address (`log.address_`) matches it exactly — logs from any other contract are ignored even if the signature and topics match.
 **Status:** mitigated by design — covered by an automated test (`test_SubmitClaim_RevertsOnEventFromUntrustedContract`).
+
+### T10 — AI claims agent hallucinating or inventing data
+**Attack:** an LLM can fabricate plausible-sounding details, answer about the wrong claim (cross-talk), or invent facts not present in its input — independent of whether its numeric suggestion happens to be reasonable. `internal/claimsagent.Agent.SuggestPayout` mitigates this with two independent layers, neither of which relies on trusting the model's own text:
+1. **Grounding at generation time** — a system prompt (Gemini's `systemInstruction`, kept separate from the per-claim user prompt) explicitly forbids inventing or assuming facts not given, and the LLM is never told the claim's real monetary value in the first place — it only ever judges severity as a 0-100 percentage, narrowing what it could hallucinate about the payout amount to begin with. `generationConfig.responseMimeType: "application/json"` additionally constrains the output format itself.
+2. **Verification after generation** — the LLM must echo back the exact order ID it was given as `orderIdConfirmation`. If that echo doesn't match the order actually being processed, the response is treated as a hallucination/cross-talk signal and the suggested percentage is discarded outright (not merely distrusted-but-used) in favor of the same safe full-refund fallback used for unparsable responses.
+Whatever percentage survives both layers is still bounded by the off-chain `policyCap` and, independently, by `ClaimVault`'s on-chain `payoutCap` (see T4) — a hallucinated suggestion can be wrong, but it cannot authorize an out-of-bounds payout on its own.
+**Status:** mitigated by design — covered by automated tests (`TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMismatches`, `TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMissing`, `TestSuggestPayout_NeverExposesTheMonetaryAmountToTheLLM`) and verified against the real Gemini API, which correctly echoed the given order ID and produced valid, unfenced JSON.
 
 ## Negative test cases covered (Foundry)
 

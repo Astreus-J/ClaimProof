@@ -63,17 +63,19 @@ A real event emitted on Sepolia is verified and results in a correct payout on `
 
 ### Tasks
 
-- [ ] Implement `internal/listener` — listens for `DeliveryFailed` via Sepolia's WSS RPC using `go-ethereum`'s `ethclient`, publishes events on a Go channel
-- [ ] Implement `internal/proofbuilder` — hand-written HTTP client wrapping `WaitUntilHeightAttested()` + `GetProof()` against the Attestcoin Prover REST API
-- [ ] Implement `internal/claimsagent` — LLM call with order context, returns a suggested value within a configurable policy (LLM client behind an interface, so it can be mocked in tests)
-- [ ] Implement `internal/chain` — automatic submission to `ClaimVault` (`submitClaim`), signed by the worker's wallet, using the `abigen`-generated binding
-- [ ] Wire everything in `cmd/worker/main.go`: read config from environment variables, construct each component via its constructor, run the listener loop, handle SIGINT/SIGTERM for graceful shutdown
-- [ ] Add structured logging (`log/slog`) and retry-with-backoff on RPC/HTTP failure
-- [ ] Run the worker end-to-end locally against testnet, with no manual step between the failure and the payout
+- [x] Implement `internal/listener` — listens for `DeliveryFailed` via Sepolia's WSS RPC using `go-ethereum`'s `ethclient`, publishes events on a Go channel
+- [x] Implement `internal/proofbuilder` — hand-written HTTP client wrapping `WaitUntilHeightAttested()` + `GetProof()` against the Attestcoin Prover REST API
+- [x] Implement `internal/claimsagent` — LLM call (Gemini) with order context, returns a suggested value within a configurable policy (LLM client behind an interface, so it can be mocked in tests)
+- [x] Implement `internal/chain` — automatic submission to `ClaimVault` (`submitClaim`), signed by the worker's wallet, using the `abigen`-generated binding
+- [x] Wire everything in `cmd/worker/main.go`: read config from environment variables, construct each component via its constructor, run the listener loop, handle SIGINT/SIGTERM for graceful shutdown
+- [x] Add structured logging (`log/slog`) and retry-with-backoff on RPC/HTTP failure
+- [x] Run the worker end-to-end locally against testnet, with no manual step between the failure and the payout
 
 ### Exit criterion
 
 When a delivery failure is simulated, the worker detects, proves, consults the AI, and submits the claim automatically — with no intermediate manual command.
+
+**Verified 2026-08-26:** `ClaimVault.submitClaim` was extended with a `suggestedPayout` parameter (`payoutAmount = min(suggestedPayout, protectionAmount, payoutCap)`) so the AI's suggestion genuinely affects the payout, not just informationally — redeployed to `0xd6f0680F366d2de5849ab00Ff2Ca48aa1D030bCd`. Order 43 registered, shipment created on Sepolia with a short SLA; the running worker binary detected the resulting `DeliveryFailed` event on its own live WSS subscription, waited for attestation, fetched the proof, asked the real Gemini API for a suggested payout (it suggested a full refund, correctly reflecting the failure description), submitted `submitClaim`, and confirmed the mined transaction — end to end, with zero manual commands after the SLA breach. Graceful shutdown on SIGTERM was also confirmed live (`"shutdown signal received, waiting for in-flight claims to finish"` → clean exit).
 
 ---
 
