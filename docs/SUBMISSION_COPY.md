@@ -34,10 +34,10 @@ Without Attestcoin, `ClaimVault` would have no cryptographically trustworthy way
 
 It's the chain where the Attestcoin Protocol's native precompile runs — there's no reason to reimplement the verification on another L1, and `ClaimVault` benefits directly from Creditcoin's execution and settlement infrastructure.
 
-## Links (fill in at the end)
+## Links (fill in GitHub + demo video at the end)
 
 - GitHub: [fill in]
 - Demo video: [fill in]
-- Deck / whitepaper: `docs/WHITEPAPER.md` (export to PDF)
-- `ClaimVault` contract (Creditcoin CC3 Testnet): [fill in address]
-- `DeliveryTrackerMock` contract (Ethereum Sepolia): [fill in address]
+- Deck / whitepaper: `docs/ClaimProof-Whitepaper.pdf`
+- `ClaimVault` contract (Creditcoin CC3 Testnet): `0xd6f0680F366d2de5849ab00Ff2Ca48aa1D030bCd`
+- `DeliveryTrackerMock` contract (Ethereum Sepolia): `0x5c293e0C72E52fAca66befbEd2a65552431Ce46d`
