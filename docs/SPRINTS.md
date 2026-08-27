@@ -137,15 +137,19 @@ Five consecutive runs of the full flow with no manual intervention beyond the ex
 ### Tasks
 
 - [x] Expand the Foundry test suite (fuzzing on payout values and the policy cap)
-- [ ] Review and finalize [THREAT_MODEL.md](THREAT_MODEL.md) with any findings from previous sprints
-- [ ] Review [ATTESTCOIN_INTEGRATION.md](ATTESTCOIN_INTEGRATION.md) with the final real addresses and behavior
-- [ ] Review [../SECURITY.md](../SECURITY.md)
-- [ ] Finalize [../README.md](../README.md) with setup instructions tested from scratch (ideally by someone outside the team)
-- [ ] Review [../ARCHITECTURE.md](../ARCHITECTURE.md) against the final implemented flow, adjusting the diagram if anything changed in practice
+- [x] Review and finalize [THREAT_MODEL.md](THREAT_MODEL.md) with any findings from previous sprints
+- [x] Review [ATTESTCOIN_INTEGRATION.md](ATTESTCOIN_INTEGRATION.md) with the final real addresses and behavior
+- [x] Review [../SECURITY.md](../SECURITY.md)
+- [x] Finalize [../README.md](../README.md) with setup instructions tested from scratch (ideally by someone outside the team)
+- [x] Review [../ARCHITECTURE.md](../ARCHITECTURE.md) against the final implemented flow, adjusting the diagram if anything changed in practice
 
 ### Exit criterion
 
 Someone outside the project can clone the repository and run the full flow following only the README, with no help.
+
+**Not independently verified by someone outside the team** (no outside tester available this sprint) — mitigated by a careful from-scratch walkthrough of the README's own instructions, which surfaced and fixed real gaps: the per-service path was missing the `cmd/api` step and the frontend's `.env.local` setup entirely, and neither path told a reader where the contract addresses or worker/LLM credentials actually come from. Recommend a genuine outside read-through before final submission if the opportunity arises.
+
+**Docs also corrected against reality, beyond their own review tasks:** both `ARCHITECTURE.md` and `docs/architecture.md` described a per-buyer premium payment into `ClaimVault`, `ethers` instead of `wagmi`+`viem`, a SQLite/Postgres indexer, and never mentioned `cmd/api` at all — none of that matched what actually got built. Fixed in both files rather than just the one this sprint names, since the two docs cross-reference each other and a judge reading both would otherwise hit a contradiction.
 
 **Fuzzing:** added `testFuzz_SubmitClaim_PayoutIsExactlyTheMinOfSuggestionProtectionAndCap` (payout formula holds across the full `uint256` range) and `testFuzz_SubmitClaim_RevertsWithoutStateChangeWhenPoolBalanceInsufficient` (locks in the underfunded-pool scenario hit live during Sprint 5), plus two explicit zero-cap/zero-suggestion edge cases. 38 Foundry tests pass.
 
