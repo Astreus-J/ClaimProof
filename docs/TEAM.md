@@ -4,7 +4,7 @@
 
 | Name | Email | Country | Role | Bio |
 |---|---|---|---|---|
-| [fill in] | jeielsantos.ti@gmail.com | [fill in] | [fill in — e.g., Founder / Full-stack & Smart Contracts] | [fill in — 2–3 sentences on relevant experience] |
+| Jeiel santos | jeielsantos.ti@gmail.com | Brasil | Founder / Full-stack & Smart Contracts | [fill in — 2–3 sentences on relevant experience] |
 
 > Add one row per additional member, if any. The hackathon allows solo teams — more than one person is not required.
 
