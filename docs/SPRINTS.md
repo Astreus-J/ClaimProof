@@ -87,16 +87,20 @@ When a delivery failure is simulated, the worker detects, proves, consults the A
 
 ### Tasks
 
-- [ ] Set up Next.js + wagmi/ethers + WalletConnect
-- [ ] "Store" screen: mock product + protection checkbox + buy button (calls `registerOrder` + `createShipment`)
-- [ ] "Dashboard" screen: the connected user's orders with live status (`Active → Failure detected → Verifying proof → Paid`)
-- [ ] Delivery-failure simulation button (calls the test function on `DeliveryTrackerMock`) — used when recording the demo
-- [ ] Subscribe to on-chain events so status updates without a manual reload
-- [ ] Handle loading and error states explicitly (no broken screen during the live demo)
+- [x] Set up Next.js + wagmi/ethers + WalletConnect
+- [x] "Store" screen: mock product + protection checkbox + buy button (calls `registerOrder` + `createShipment`)
+- [x] "Dashboard" screen: the connected user's orders with live status (`Active → Failure detected → Verifying proof → Paid`)
+- [x] Delivery-failure simulation button (calls the test function on `DeliveryTrackerMock`) — used when recording the demo
+- [x] Subscribe to on-chain events so status updates without a manual reload
+- [x] Handle loading and error states explicitly (no broken screen during the live demo)
+
+Buyer-facing wallet writes to `registerOrder`/`createShipment` were `onlyWorker`-gated as of Sprint 2's T8 fix, so a new `cmd/api` service (the "Store" operator, per `docs/architecture.md`'s sequence diagram) was added to `backend/` to sign those two calls on the buyer's behalf; the buyer's wallet only identifies the payout address.
 
 ### Exit criterion
 
 Without touching code or the console, it's possible to buy protection, simulate the failure, and watch the status change to "Paid" live in the interface.
+
+**Verified so far:** the buy flow end-to-end against live testnet (real `CreateShipment` + `RegisterOrder` transactions, confirmed on both chains, dashboard reflects the new order immediately); the buy-flow error state (API unreachable); the dashboard's live status reads against already-existing real orders in every state the badge supports (`Active`, `Paid`); the simulate-failure button's SLA-gating logic (correctly disabled/enabled against real on-chain deadlines). **Not yet verified:** watching a status live-transition through `Failure detected → Verifying proof → Paid` end-to-end, which additionally requires the Sprint 3 worker (listener + Attestcoin prover + claims agent) running alongside the frontend — this is exactly what Sprint 5's "five consecutive full-flow runs" exit criterion covers, so it's deferred there rather than re-tested piecemeal here.
 
 ---
 
