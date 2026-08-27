@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useConnection } from "wagmi";
 import { formatEther } from "viem";
 import ConnectWalletButton from "@/components/ConnectWalletButton";
+import Spinner from "@/components/Spinner";
 import { addTrackedOrder } from "@/lib/orders";
 import { API_BASE_URL } from "@/lib/contracts";
+import { formatRequestError } from "@/lib/errors";
 import { useMounted } from "@/lib/useMounted";
 
 const PRODUCT = {
@@ -61,7 +63,7 @@ export default function StorePage() {
       router.push("/dashboard");
     } catch (err) {
       setState("error");
-      setErrorMessage(err instanceof Error ? err.message : "Something went wrong — please try again.");
+      setErrorMessage(formatRequestError(err));
     }
   }
 
@@ -96,8 +98,9 @@ export default function StorePage() {
           <button
             onClick={handleBuy}
             disabled={state === "submitting"}
-            className="mt-6 w-full rounded-full bg-accent px-4 py-3 font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-accent px-4 py-3 font-medium text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
           >
+            {state === "submitting" && <Spinner className="h-4 w-4" />}
             {state === "submitting" ? "Processing purchase…" : "Buy with Delivery Protection"}
           </button>
         )}

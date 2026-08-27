@@ -33,6 +33,29 @@ export const deliveryTrackerMockAbi = [
     ],
     anonymous: false,
   },
+  {
+    type: "error",
+    name: "ShipmentNotFound",
+    inputs: [{ name: "orderId", type: "uint256" }],
+  },
+  {
+    type: "error",
+    name: "ShipmentNotPending",
+    inputs: [{ name: "orderId", type: "uint256" }],
+  },
+  {
+    type: "error",
+    name: "SlaNotExpired",
+    inputs: [
+      { name: "orderId", type: "uint256" },
+      { name: "slaDeadline", type: "uint256" },
+    ],
+  },
+  {
+    type: "error",
+    name: "ZeroAddress",
+    inputs: [],
+  },
 ] as const;
 
 export const claimVaultAbi = [
