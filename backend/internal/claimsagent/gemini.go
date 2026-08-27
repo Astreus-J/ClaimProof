@@ -21,8 +21,19 @@ type geminiContent struct {
 	Parts []geminiPart `json:"parts"`
 }
 
+type geminiGenerationConfig struct {
+	// ResponseMimeType "application/json" asks Gemini to emit a bare JSON
+	// document — no markdown fences, no surrounding prose — narrowing the
+	// output format the response parser has to defend against.
+	ResponseMimeType string `json:"responseMimeType,omitempty"`
+}
+
 type geminiRequest struct {
-	Contents []geminiContent `json:"contents"`
+	// SystemInstruction is sent as a distinct role from Contents wherever
+	// the provider supports it — see claimsagent.go's systemPrompt.
+	SystemInstruction *geminiContent          `json:"systemInstruction,omitempty"`
+	Contents          []geminiContent         `json:"contents"`
+	GenerationConfig  *geminiGenerationConfig `json:"generationConfig,omitempty"`
 }
 
 type geminiCandidate struct {
@@ -42,7 +53,7 @@ type GeminiClient struct {
 }
 
 // NewGeminiClient creates a GeminiClient for the given API key. If model is
-// empty, "gemini-2.0-flash" is used. If httpClient is nil,
+// empty, "gemini-3.6-flash" is used. If httpClient is nil,
 // http.DefaultClient is used.
 func NewGeminiClient(apiKey, model string, httpClient *http.Client) *GeminiClient {
 	if model == "" {
@@ -54,10 +65,14 @@ func NewGeminiClient(apiKey, model string, httpClient *http.Client) *GeminiClien
 	return &GeminiClient{apiKey: apiKey, model: model, httpClient: httpClient, baseURL: defaultGeminiBaseURL}
 }
 
-// Complete sends prompt to Gemini's generateContent endpoint and returns the
-// first candidate's text.
-func (g *GeminiClient) Complete(ctx context.Context, prompt string) (string, error) {
-	reqBody, err := json.Marshal(geminiRequest{Contents: []geminiContent{{Parts: []geminiPart{{Text: prompt}}}}})
+// Complete sends systemPrompt as Gemini's systemInstruction and userPrompt
+// as the user turn, and returns the first candidate's text.
+func (g *GeminiClient) Complete(ctx context.Context, systemPrompt, userPrompt string) (string, error) {
+	reqBody, err := json.Marshal(geminiRequest{
+		SystemInstruction: &geminiContent{Parts: []geminiPart{{Text: systemPrompt}}},
+		Contents:          []geminiContent{{Parts: []geminiPart{{Text: userPrompt}}}},
+		GenerationConfig:  &geminiGenerationConfig{ResponseMimeType: "application/json"},
+	})
 	if err != nil {
 		return "", fmt.Errorf("claimsagent: encode Gemini request: %w", err)
 	}

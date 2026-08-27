@@ -65,6 +65,13 @@
 **Mitigation:** `ClaimVault` stores `DeliveryTrackerMock`'s address as an immutable `sourceContract` set at deployment, and `submitClaim` only accepts a `DeliveryFailed` log whose emitter address (`log.address_`) matches it exactly — logs from any other contract are ignored even if the signature and topics match.
 **Status:** mitigated by design — covered by an automated test (`test_SubmitClaim_RevertsOnEventFromUntrustedContract`).
 
+### T10 — AI claims agent hallucinating or inventing data
+**Attack:** an LLM can fabricate plausible-sounding details, answer about the wrong claim (cross-talk), or invent facts not present in its input — independent of whether its numeric suggestion happens to be reasonable. `internal/claimsagent.Agent.SuggestPayout` mitigates this with two independent layers, neither of which relies on trusting the model's own text:
+1. **Grounding at generation time** — a system prompt (Gemini's `systemInstruction`, kept separate from the per-claim user prompt) explicitly forbids inventing or assuming facts not given, and the LLM is never told the claim's real monetary value in the first place — it only ever judges severity as a 0-100 percentage, narrowing what it could hallucinate about the payout amount to begin with. `generationConfig.responseMimeType: "application/json"` additionally constrains the output format itself.
+2. **Verification after generation** — the LLM must echo back the exact order ID it was given as `orderIdConfirmation`. If that echo doesn't match the order actually being processed, the response is treated as a hallucination/cross-talk signal and the suggested percentage is discarded outright (not merely distrusted-but-used) in favor of the same safe full-refund fallback used for unparsable responses.
+Whatever percentage survives both layers is still bounded by the off-chain `policyCap` and, independently, by `ClaimVault`'s on-chain `payoutCap` (see T4) — a hallucinated suggestion can be wrong, but it cannot authorize an out-of-bounds payout on its own.
+**Status:** mitigated by design — covered by automated tests (`TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMismatches`, `TestSuggestPayout_FallsBackToFullAmountWhenOrderIdConfirmationMissing`, `TestSuggestPayout_NeverExposesTheMonetaryAmountToTheLLM`) and verified against the real Gemini API, which correctly echoed the given order ID and produced valid, unfenced JSON.
+
 ## Negative test cases covered (Foundry)
 
 - Submitting a claim with an invalid proof → revert
