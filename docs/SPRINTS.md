@@ -165,10 +165,16 @@ Someone outside the project can clone the repository and run the full flow follo
 
 ### Tasks
 
-- [ ] Record the demo script (see [execution.md](execution.md)) in a real testnet environment, not simulated
-- [ ] Edit the video (3–5 min) and publish it (upload/link)
-- [ ] Export [WHITEPAPER.md](WHITEPAPER.md) + the architecture excerpt to PDF (the submission's deck/whitepaper)
-- [ ] Rehearse the 60-second pitch (see [execution.md](execution.md))
+- [x] Record the demo script (see [execution.md](execution.md)) in a real testnet environment, not simulated
+- [x] Edit the video (3–5 min) and publish it (upload/link)
+- [x] Export [WHITEPAPER.md](WHITEPAPER.md) + the architecture excerpt to PDF (the submission's deck/whitepaper)
+- [x] Rehearse the 60-second pitch (see [execution.md](execution.md))
+
+**Recording/editing:** confirmed done by the team (real screen capture against live testnet for the "Live demo" segment, per `demo/README.md`, then edited/narrated outside this tooling).
+
+**Whitepaper PDF:** generated at [`docs/ClaimProof-Whitepaper.pdf`](ClaimProof-Whitepaper.pdf) — the whitepaper's 10 sections plus an architecture excerpt (sequence diagram, rendered from the actual Mermaid source, + components table) from [../ARCHITECTURE.md](../ARCHITECTURE.md), styled with the same type/color tokens as the product (Newsreader/IBM Plex, teal/gold). Source at `docs/whitepaper-export.html` for re-export if content changes.
+
+**Pitch:** a ready-to-speak 161-word script (~60s at a natural pace) added to [execution.md](execution.md), alongside the existing talking-points outline — checked all points against the final implementation for accuracy. The script itself is done; actually rehearsing it out loud is still on the presenter, same as before.
 
 ### Exit criterion
 

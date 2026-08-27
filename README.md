@@ -24,8 +24,8 @@ sequenceDiagram
     participant Attest as Attestcoin Precompile 0x0FD2 (Creditcoin)
     participant Vault as ClaimVault (Creditcoin)
 
-    Buyer->>Store: Buy + pay protection premium
-    Store->>Vault: registerOrder(orderId, buyer, premium)
+    Buyer->>Store: Buy (protection included, no separate premium tx)
+    Store->>Vault: registerOrder(orderId, buyer, protectionAmount)
     Store->>Tracker: createShipment(orderId, SLA)
     Note over Tracker: SLA expires with no delivery confirmation
     Tracker-->>Tracker: emit DeliveryFailed(orderId, buyer, timestamp)
