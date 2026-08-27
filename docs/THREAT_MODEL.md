@@ -92,3 +92,5 @@ Whatever percentage survives both layers is still bounded by the off-chain `poli
 - Submitting a claim whose event's buyer doesn't match the registered order's buyer → revert
 - Submitting a claim whose `DeliveryFailed` log was emitted by a contract other than the trusted `sourceContract` → revert
 - Submitting a claim for an order that was already paid out → revert
+- Submitting a claim the pool's balance can't cover → revert, order left unclaimed and resubmittable (fuzzed across the balance/protection-amount range)
+- The payout formula `min(suggestedPayout, protectionAmount, payoutCap)` holds across the full `uint256` range of all three inputs, including zero on either bound (fuzzed)

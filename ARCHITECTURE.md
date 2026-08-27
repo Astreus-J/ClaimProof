@@ -16,8 +16,8 @@ sequenceDiagram
     participant Attest as Attestcoin Precompile 0x0FD2 (Creditcoin)
     participant Vault as ClaimVault (Creditcoin)
 
-    Buyer->>Store: Buy + pay protection premium
-    Store->>Vault: registerOrder(orderId, buyer, premium)
+    Buyer->>Store: Buy (protection included, no separate premium tx)
+    Store->>Vault: registerOrder(orderId, buyer, protectionAmount)
     Store->>Tracker: createShipment(orderId, SLA)
     Note over Tracker: SLA expires with no delivery confirmation
     Tracker-->>Tracker: emit DeliveryFailed(orderId, buyer, timestamp)
@@ -37,20 +37,22 @@ sequenceDiagram
 
 ### Frontend (`frontend/`)
 
-Next.js + wagmi/ethers v6 + WalletConnect. Two surfaces:
+Next.js + wagmi + viem. Two surfaces:
 
-- **Storefront demo** — mock catalog, "delivery protection" purchase option, failure-simulation button (used in the live demo).
-- **Dashboard** — real-time order status: `Active → Failure detected → Verifying proof → Paid`.
+- **Storefront demo** — mock catalog with delivery protection included at checkout; "Buy" calls `cmd/api` rather than signing anything from the buyer's wallet (see below).
+- **Dashboard** — real-time order status read directly from both chains: `Active → Failure detected → Verifying proof → Paid`, plus the AI claims agent's reasoning once a claim has been processed.
 
-### Backend / Worker (`backend/`)
+### Backend (`backend/`) — two Go services sharing `internal/`
 
-Go service (`cmd/worker` + `internal/`), three responsibilities:
+**`cmd/api`** — the Store's backend operator. `registerOrder`/`createShipment` are gated to the authorized worker address (see Threat T8), so the buyer's own wallet can never call them directly; `cmd/api` signs both on the buyer's behalf when they click "Buy." The buyer's connected wallet is used only to identify the address a future payout should go to. Also exposes an in-memory `GET/POST /api/claims/{orderId}` the worker uses to publish the AI's payout reasoning for the dashboard to display — informational only, never part of the payout-authorization path.
+
+**`cmd/worker`** — the claims pipeline, three responsibilities:
 
 1. **Listener** (`internal/listener`) — listens for the `DeliveryFailed` event from `DeliveryTrackerMock` via Sepolia's WSS RPC, using `go-ethereum`'s `ethclient`.
 2. **Proof Builder** (`internal/proofbuilder`) — calls the Attestcoin Prover REST API directly (`https://prover.cc3-testnet.creditcoin.network`) to wait for attestation and obtain the Merkle inclusion + continuity proof for the `DeliveryFailed` transaction. There is no official Go SDK for Attestcoin — this package is a small hand-written HTTP client, since the official `@gluwa/usc-sdk` is TypeScript-only and is, itself, just a wrapper around this same REST API.
-3. **AI Claims Agent** (`internal/claimsagent`) — receives the order context (value, history) and returns a suggested payout amount, always bounded by a policy cap configured in the contract (the AI never decides the final amount alone nor authorizes payment).
+3. **AI Claims Agent** (`internal/claimsagent`) — receives the order context and a fixed failure description, and returns a suggested payout amount plus its reasoning, always bounded by a policy cap (the AI never decides the final amount alone nor authorizes payment). Provider-swappable (Gemini, OpenAI, or Anthropic) via `LLM_PROVIDER`.
 
-The worker (`internal/chain`, using `go-ethereum` + `abigen`-generated bindings) then calls `submitClaim(proof, suggestedAmount)` on `ClaimVault`.
+`cmd/worker` (`internal/chain`, using `go-ethereum` + `abigen`-generated bindings) then calls `submitClaim(proof, suggestedAmount)` on `ClaimVault`.
 
 ### Smart contracts (`contracts/`)
 
@@ -73,16 +75,16 @@ Ethereum Sepolia — the only source chain the Attestcoin Protocol currently sup
 
 ### Indexer / Database
 
-Lightweight cache (SQLite/Postgres) used only so the dashboard renders history quickly. **Never** the source of truth for a payout — every payment always goes through on-chain re-verification via Attestcoin.
+No database — the dashboard reads status directly from both chains on every poll (wagmi + viem, no indexing layer needed at this scale). The buyer's own list of tracked orders lives in browser `localStorage`; the AI's payout reasoning lives in `cmd/api`'s in-memory store (lost on restart, since it's informational only). **Never** the source of truth for a payout either way — every payment always goes through on-chain re-verification via Attestcoin.
 
 ### Wallet / Authentication
 
-MetaMask or WalletConnect on both sides (Sepolia for `DeliveryTrackerMock`, Creditcoin testnet for `ClaimVault`). Authentication is purely wallet-based, with no proprietary identity backend.
+MetaMask or WalletConnect, purely wallet-based with no proprietary identity backend. In practice the buyer's wallet only ever signs on Sepolia (the demo's "Simulate Delivery Failure" button, calling `DeliveryTrackerMock.reportDeliveryFailure` directly) and otherwise just identifies the payout address — every write to `ClaimVault` (`registerOrder`, `submitClaim`) is signed by the backend's worker key, never the buyer's.
 
 ## Transaction flow, step by step
 
-1. The buyer completes the order and pays a protection premium into `ClaimVault` (Creditcoin).
-2. The order is registered in `DeliveryTrackerMock` (Ethereum Sepolia) with a delivery SLA.
+1. The buyer completes the order on the Storefront; `cmd/api` (the Store's operator service) registers the order's protection amount in `ClaimVault` (Creditcoin) on the buyer's behalf — no separate premium transaction from the buyer's own wallet.
+2. `cmd/api` also registers the shipment in `DeliveryTrackerMock` (Ethereum Sepolia) with a delivery SLA.
 3. If the SLA expires with no delivery confirmation, the contract emits `DeliveryFailed`.
 4. The worker detects the event, waits for finalization and attestation (`waitUntilHeightAttested`), and obtains the inclusion proof via the hosted Proof Builder.
 5. The worker sends the proof and the raw transaction data to the AI Claims Agent, which analyzes the order context and proposes a payout amount within the configured policy.
@@ -96,6 +98,7 @@ MetaMask or WalletConnect on both sides (Sepolia for `DeliveryTrackerMock`, Cred
 - Verification via Attestcoin completes in roughly **one Creditcoin block (~15s)** after the source event's attestation becomes available.
 - The gas cost of verification **grows with proof age** — an event proven a few minutes after it occurred is orders of magnitude cheaper than one proven 24 hours later (more continuity hashes to walk). The worker should submit the claim as soon as possible after attestation becomes available.
 - Proof batches are limited to 10 transactions per `getBatchProof` and a 1000-block range — not relevant for the MVP (one claim at a time), but relevant if the underwriting pool scales to process multiple claims simultaneously.
+- Claims whose trigger events land within the same attestation checkpoint window can have their continuity proofs invalidate together rather than independently — see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) T11, found via live testing.
 
 ## Out of MVP scope
 
