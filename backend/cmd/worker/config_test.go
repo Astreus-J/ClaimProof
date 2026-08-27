@@ -58,6 +58,25 @@ func TestLoadConfig_LLMModelIsOptionalAndOverridable(t *testing.T) {
 	assert.Equal(t, "gemini-3.6-flash", cfg.llmModel)
 }
 
+func TestLoadConfig_APIBaseURLDefaultsToLocalhost(t *testing.T) {
+	setValidEnv(t)
+
+	cfg, err := loadConfig()
+
+	require.NoError(t, err)
+	assert.Equal(t, "http://localhost:8080", cfg.apiBaseURL)
+}
+
+func TestLoadConfig_APIBaseURLIsOverridable(t *testing.T) {
+	setValidEnv(t)
+	t.Setenv("API_BASE_URL", "http://api:8080")
+
+	cfg, err := loadConfig()
+
+	require.NoError(t, err)
+	assert.Equal(t, "http://api:8080", cfg.apiBaseURL)
+}
+
 func TestLoadConfig_ReturnsErrorWhenRequiredVarMissing(t *testing.T) {
 	requiredVars := []string{
 		"SEPOLIA_WSS_URL",

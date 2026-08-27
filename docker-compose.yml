@@ -15,6 +15,12 @@ services:
       args:
         CMD_PATH: ./cmd/worker
     env_file: .env
+    environment:
+      # Override .env's localhost default — inside the Compose network the
+      # api service is reachable by its service name, not localhost.
+      API_BASE_URL: http://api:8080
+    depends_on:
+      - api
     restart: unless-stopped
 
   frontend:

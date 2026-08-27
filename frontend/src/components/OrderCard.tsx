@@ -6,6 +6,7 @@ import { formatEther } from "viem";
 import StatusBadge, { type BadgeStage } from "./StatusBadge";
 import Spinner from "./Spinner";
 import { useOrderStatus } from "@/lib/useOrderStatus";
+import { useClaimReasoning } from "@/lib/useClaimReasoning";
 import { deliveryTrackerMockAbi } from "@/lib/abi";
 import { DELIVERY_TRACKER_MOCK_ADDRESS } from "@/lib/contracts";
 import { formatContractError } from "@/lib/errors";
@@ -96,6 +97,8 @@ export default function OrderCard({ order }: { order: TrackedOrder }) {
     chainId: sepolia.id,
   });
 
+  const { data: aiReasoning } = useClaimReasoning(order.orderId, !status.isLoading && status.stage !== "active");
+
   if (status.isLoading) return <OrderCardSkeleton />;
 
   return (
@@ -126,6 +129,12 @@ export default function OrderCard({ order }: { order: TrackedOrder }) {
       {status.isError && (
         <p className="mt-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
           Couldn&apos;t read this order&apos;s status just now — retrying automatically.
+        </p>
+      )}
+
+      {aiReasoning && (status.stage === "failed" || status.stage === "paid") && (
+        <p className="badge-transition mt-4 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-sm text-ink">
+          <span className="font-medium text-accent">AI assessment:</span> {aiReasoning.reasoning}
         </p>
       )}
 

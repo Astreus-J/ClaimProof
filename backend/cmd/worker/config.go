@@ -24,6 +24,7 @@ type config struct {
 	llmAPIKey              string
 	llmModel               string
 	policyCapWei           *big.Int
+	apiBaseURL             string
 }
 
 func loadConfig() (*config, error) {
@@ -84,6 +85,15 @@ func loadConfig() (*config, error) {
 		return nil, fmt.Errorf("POLICY_CAP_WEI %q is not a valid base-10 integer", policyCapWeiStr)
 	}
 
+	// API_BASE_URL is optional — where cmd/api is reachable, so the worker
+	// can report the AI's payout reasoning for the dashboard to display.
+	// Defaults to localhost for `go run` convenience; docker-compose.yml
+	// overrides it to the "api" service's Compose DNS name.
+	apiBaseURL := os.Getenv("API_BASE_URL")
+	if apiBaseURL == "" {
+		apiBaseURL = "http://localhost:8080"
+	}
+
 	return &config{
 		sepoliaWSSURL:          sepoliaWSSURL,
 		creditcoinRPCURL:       creditcoinRPCURL,
@@ -95,6 +105,7 @@ func loadConfig() (*config, error) {
 		llmAPIKey:              llmAPIKey,
 		llmModel:               llmModel,
 		policyCapWei:           policyCapWei,
+		apiBaseURL:             apiBaseURL,
 	}, nil
 }
 
